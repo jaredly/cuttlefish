@@ -1,5 +1,6 @@
 // My little framework
-export const node = (name: string, attrs: any | null, children?: HTMLElement[]) => {
+const svgTags = ['svg', 'path', 'rect', 'circle', 'ellipse', 'line', 'text'];
+export const node = (name: string, attrs: any | null, children?: (HTMLElement | SVGElement)[]) => {
     if (children === undefined && (Array.isArray(attrs) || typeof attrs !== 'object')) {
         children = attrs;
         attrs = null;
@@ -16,7 +17,7 @@ export const node = (name: string, attrs: any | null, children?: HTMLElement[]) 
             node.appendChild(child);
         }
     };
-    const node = document.createElement(name);
+    const node = svgTags.includes(name) ? document.createElementNS('http://www.w3.org/2000/svg', name) : document.createElement(name);
     if (attrs) {
         Object.keys(attrs).forEach((k) => {
             if (k === 'style') {
@@ -35,11 +36,11 @@ export const node = (name: string, attrs: any | null, children?: HTMLElement[]) 
     add(children);
     return node;
 };
-export const named = (name: string) => (attrs: any, children?: HTMLElement[]) => node(name, attrs, children);
+export const named = (name: string) => (attrs: any, children?: (HTMLElement | SVGElement)[]) => node(name, attrs, children);
 export const div = named('div');
 export const span = named('span');
 export const button = named('button');
-export const render = (dest: HTMLElement, node: HTMLElement) => {
+export const render = (dest: HTMLElement, node: HTMLElement | SVGElement) => {
     dest.innerHTML = '';
     dest.appendChild(node);
 };

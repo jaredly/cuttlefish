@@ -1,4 +1,4 @@
-import { div, render } from './src/framework';
+import { div, node, render } from './src/framework';
 
 type State = {
     players: {
@@ -13,6 +13,7 @@ type Card = {
     idx: number;
     suit: number;
     back: number[];
+    rot: number;
 };
 
 const suits = 7;
@@ -48,34 +49,52 @@ for (let suit = 0; suit < suits; suit++) {
         back.splice(at, 0, suit);
     });
     backs.forEach((back, i) => {
-        cards.push({ back, suit, idx: cards.length });
+        cards.push({ back, suit, idx: cards.length, rot: Math.random() });
     });
 }
 
 cards = randsort(cards);
 
-// console.log('Hello via Bun!');
-// console.log(cards.length);
+const renderCard = (card: Card) => {
+    const size = 300;
+    const r = (Math.PI * size) / 4 / card.back.length;
+    return div(
+        {
+            style: {
+                border: `5px solid ${colors[card.suit]}`,
+                padding: '8px',
+                margin: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+            },
+            class: 'bg-base-100 shadow-sm rounded-lg',
+        },
+        [
+            node(
+                'svg',
+                {
+                    width: size + 'px',
+                    height: size + 'px',
+                },
+                card.back.map((suit, i) =>
+                    node('ellipse', {
+                        cx: size / 2 + (Math.cos(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * size) / 4,
+                        cy: size / 2 + (Math.sin(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * size) / 4,
+                        rx: r / 2,
+                        ry: r / 2,
+                        fill: colors[suit],
+                    }),
+                ),
+            ),
+        ],
+    );
+};
 
 render(
     document.body,
     div(
         { style: { display: 'flex', flexWrap: 'wrap' } },
-        cards.map((card) =>
-            div(
-                {
-                    style: {
-                        border: `5px solid ${colors[card.suit]}`,
-                        padding: '8px',
-                        margin: '8px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                    },
-                    class: 'bg-base-100 shadow-sm rounded-lg',
-                },
-                card.back.map((suit) => div({ style: { background: colors[suit], height: '30px', width: '150px' } })),
-            ),
-        ),
+        cards.map((card) => renderCard(card)),
     ),
 );
