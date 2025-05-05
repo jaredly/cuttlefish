@@ -17,7 +17,7 @@ type Card = {
 
 const suits = 7;
 const rainbow = 3;
-const cards: Card[] = [];
+let cards: Card[] = [];
 
 const colors = ['green', 'pink', 'purple', 'red', 'orange', 'yellow', 'blue'];
 
@@ -32,24 +32,49 @@ const combinate = (left: number, suits: number, path: number[], dest: number[][]
     }
 };
 
+const randsort = <T>(a: T[]): T[] => {
+    return a
+        .map((v) => [v, Math.random()] as const)
+        .sort((a, b) => a[1] - b[1])
+        .map((a) => a[0]);
+};
+
 for (let suit = 0; suit < suits; suit++) {
     const backs: number[][] = [];
     combinate(rainbow - 1, suits, [suit], backs);
-    backs.forEach((back) => {
+    randsort(backs).forEach((back, i) => {
+        const at = i % rainbow;
+        back.splice(0, 1);
+        back.splice(at, 0, suit);
+    });
+    backs.forEach((back, i) => {
         cards.push({ back, suit, idx: cards.length });
     });
 }
 
-console.log('Hello via Bun!');
-console.log(cards.length);
+cards = randsort(cards);
+
+// console.log('Hello via Bun!');
+// console.log(cards.length);
+
 render(
     document.body,
     div(
         { style: { display: 'flex', flexWrap: 'wrap' } },
         cards.map((card) =>
             div(
-                { style: { border: `5px solid ${colors[card.suit]}`, padding: '8px', margin: '8px' } },
-                card.back.map((suit) => div({ style: { background: colors[suit], width: '50px', height: '10px' } })),
+                {
+                    style: {
+                        border: `5px solid ${colors[card.suit]}`,
+                        padding: '8px',
+                        margin: '8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                    },
+                    class: 'bg-base-100 shadow-sm rounded-lg',
+                },
+                card.back.map((suit) => div({ style: { background: colors[suit], height: '30px', width: '150px' } })),
             ),
         ),
     ),
