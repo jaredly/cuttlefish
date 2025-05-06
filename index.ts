@@ -21,12 +21,15 @@ type Card = {
     rot: number;
 };
 
+const maxPoints = 10;
 const suits = 7;
 const rainbow = 3;
 let cards: Card[] = [];
 const startingTankSize = 4;
 
-const colors = ['green', 'pink', 'purple', 'red', 'orange', 'yellow', 'blue'];
+const colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#a65628', '#f781bf', '#999999', '#ffff33'];
+// const colors = ['green', 'pink', 'purple', 'red', 'orange', '#ffe900', 'blue'];
+// const colors = ['#b3e2cd', '#fdcdac', '#cbd5e8', '#f4cae4', '#e6f5c9', '#fff2ae', '#f1e2cc', '#cccccc'];
 
 const combinate = (left: number, suits: number, path: number[], dest: number[][]) => {
     for (let i = path.length > 1 ? path[path.length - 1]! + 1 : 0; i < suits; i++) {
@@ -66,11 +69,11 @@ const cardHeight = cardWidth * 1.8;
 
 const renderCardStack = (player: number, suit: number, stack: number, highlight: boolean, scale = 1) => {
     const shared = {
-        border: `5px solid ${colors[suit]}`,
+        // border: `5px solid ${colors[suit]}`,
         backgroundColor: colors[suit],
         // border: `5px solid black`,
         position: 'relative',
-        padding: '8px',
+        // padding: '8px',
         margin: '8px',
         display: 'flex',
         flexDirection: 'column',
@@ -278,23 +281,35 @@ const renderGame = (state: State, update: (action: Action) => void) => {
                                             : {},
                                 },
                                 [
-                                    div({ style: { padding: '8px 16px', fontSize: '1.5em', fontWeight: 'bold' } }, [
-                                        player.name,
-                                        //
-                                        span(
-                                            {
-                                                style: {
-                                                    marginLeft: '16px',
-                                                },
+                                    div(
+                                        {
+                                            style: {
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                                padding: '8px 16px',
+                                                fontSize: '1.5em',
+                                                fontWeight: 'bold',
+                                                alignItems: 'center',
+                                                gap: '8px',
                                             },
-                                            player.score.length + ' points',
-                                        ),
-                                    ]),
-                                    div({ style: { display: 'flex', flexDirection: 'row' } }, [
-                                        ...player.tank.map((cards, suit) =>
-                                            renderCardStack(i, suit, cards.length, state.deck[0]!.back.includes(suit)),
-                                        ),
-                                    ]),
+                                        },
+                                        [player.name, div({ style: { flex: 1 } }, []), points(player.score.length)],
+                                    ),
+                                    div(
+                                        {
+                                            style: {
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                                height: cardHeight + 'px',
+                                                width: cardWidth * suits + 16 * suits + 'px',
+                                            },
+                                        },
+                                        [
+                                            ...player.tank.map((cards, suit) =>
+                                                renderCardStack(i, suit, cards.length, state.deck[0]!.back.includes(suit)),
+                                            ),
+                                        ],
+                                    ),
                                 ],
                             ),
                             div({ style: { alignSelf: 'anchor-center' } }, [
@@ -387,10 +402,8 @@ const flipDeck = async () => {
 const expandTank = async (player: number, suit: number) => {
     const pile = document.getElementById(`tank-${player}-${suit}`);
     if (!pile) return;
-    pile.style.borderWidth = '5px';
-    pile.style.width = cardWidth + 16 + 10 + 'px';
+    pile.style.width = cardWidth + 'px';
     pile.style.marginInline = '8px';
-    pile.style.padding = '8px';
     await wait(400);
 };
 
@@ -443,6 +456,36 @@ const update = async (state: State, action: Action) => {
 };
 
 ['james', 'selina', 'jared'].forEach((name) => addPlayer(name, state));
+
+const points = (num: number) => {
+    const cards = [];
+    for (let i = 0; i < maxPoints; i++) {
+        cards.push(
+            div(
+                {
+                    style: {
+                        background: i < num ? 'black' : 'white',
+                        border: '2px solid black',
+                        borderRadius: '4px',
+                        width: cardWidth / 3 + 'px',
+                        height: cardHeight / 3 + 'px',
+                    },
+                },
+                [],
+            ),
+        );
+    }
+    return div(
+        {
+            style: {
+                display: 'inline-flex',
+                flexDirection: 'row',
+                gap: '8px',
+            },
+        },
+        cards,
+    );
+};
 
 const rerender = () => {
     renderGame(state, async (action) => {
