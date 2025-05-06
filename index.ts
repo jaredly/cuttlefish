@@ -64,7 +64,7 @@ cards = randsort(cards);
 const cardWidth = 100;
 const cardHeight = cardWidth * 1.8;
 
-const renderCardStack = (player: number, suit: number, stack: number) => {
+const renderCardStack = (player: number, suit: number, stack: number, scale = 1) => {
     const shared = {
         border: `5px solid ${colors[suit]}`,
         backgroundColor: colors[suit],
@@ -109,15 +109,15 @@ const renderCardStack = (player: number, suit: number, stack: number) => {
             node(
                 'svg',
                 {
-                    width: cardWidth + 'px',
-                    height: cardHeight + 'px',
+                    width: cardWidth * scale + 'px',
+                    height: cardHeight * scale + 'px',
                 },
                 [
                     node('ellipse', {
-                        cx: cardWidth / 2,
-                        cy: cardHeight / 2,
-                        rx: cardWidth / 3,
-                        ry: cardWidth / 3,
+                        cx: (cardWidth / 2) * scale,
+                        cy: (cardHeight / 2) * scale,
+                        rx: (cardWidth / 3) * scale,
+                        ry: (cardWidth / 3) * scale,
                         fill: 'white',
                     }),
                 ],
@@ -154,6 +154,8 @@ const renderCardBack = (card: Card) => {
     const r = (Math.PI * cardWidth) / 2 / card.back.length;
     return div(
         {
+            id: 'deck-card',
+            'data-suit': card.suit,
             style: {
                 // border: `5px solid ${colors[card.suit]}`,
                 border: `5px solid black`,
@@ -283,6 +285,21 @@ const state: State = {
 
 const wait = (n: number) => new Promise((res) => setTimeout(res, n));
 
+const flipDeck = async () => {
+    const card = document.getElementById('deck-card');
+    if (!card) return;
+    card.style.transition = 'transform .3s ease-out';
+    card.style.transform = 'rotate3d(0, 1, 0, 90deg)';
+    await wait(300);
+    const newCard = renderCardStack(-1, +card.getAttribute('data-suit')!, 1, 2);
+    newCard.style.transform = 'rotate3d(0, 1, 0, 90deg)';
+    card.replaceWith(newCard);
+    newCard.style.transition = 'transform .3s ease-out';
+    await wait(100);
+    newCard.style.transform = 'rotate3d(0, 1, 0, 0deg)';
+    await wait(300);
+};
+
 const expandTank = async (player: number, suit: number) => {
     const pile = document.getElementById(`tank-${player}-${suit}`);
     if (!pile) return;
@@ -310,6 +327,7 @@ const highlightTank = async (player: number, suit: number) => {
 const update = async (state: State, action: Action) => {
     const card = state.deck.shift()!;
     const player = state.players[state.turn]!;
+    await flipDeck();
     switch (action.type) {
         case 'bank': {
             if (player.tank[card.suit]!.length) {
