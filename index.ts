@@ -197,52 +197,65 @@ const renderGame = (state: State, update: (action: Action) => void) => {
         div(
             { style: { display: 'flex', flexDirection: 'row', alignItems: 'center', height: '100vh', padding: '16px' } },
             [
-                div({ style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' } }, [
-                    state.players.map((player, i) =>
-                        div(
-                            {
-                                style:
-                                    i === state.turn
-                                        ? {
-                                              outline: '5px dotted magenta',
-                                              borderRadius: '10px',
-                                          }
-                                        : {},
-                            },
-                            [
-                                div({ style: { padding: '8px 16px', fontSize: '1.5em', fontWeight: 'bold' } }, [
-                                    player.name,
-                                    //
-                                    span(
-                                        {
-                                            style: {
-                                                marginLeft: '16px',
+                div(
+                    {
+                        style: {
+                            flex: 1,
+                            display: 'grid',
+                            gridTemplateColumns: '1fr max-content',
+                            alignItems: 'flex-start',
+                            justifyContent: 'center',
+                        },
+                    },
+                    [
+                        state.players.map((player, i) => [
+                            div(
+                                {
+                                    style:
+                                        i === state.turn
+                                            ? {
+                                                  outline: '5px dotted magenta',
+                                                  borderRadius: '10px',
+                                              }
+                                            : {},
+                                },
+                                [
+                                    div({ style: { padding: '8px 16px', fontSize: '1.5em', fontWeight: 'bold' } }, [
+                                        player.name,
+                                        //
+                                        span(
+                                            {
+                                                style: {
+                                                    marginLeft: '16px',
+                                                },
                                             },
+                                            player.score.length + ' points',
+                                        ),
+                                    ]),
+                                    div({ style: { display: 'flex', flexDirection: 'row' } }, [
+                                        ...player.tank.map((cards, suit) => renderCardStack(i, suit, cards.length)),
+                                    ]),
+                                ],
+                            ),
+                            div({ style: { alignSelf: 'anchor-center' } }, [
+                                button(
+                                    {
+                                        class: 'btn btn-xl btn-' + (i === state.turn ? 'primary' : 'secondary'),
+                                        style: {
+                                            marginLeft: '24px',
+                                            borderRadius: '4px',
                                         },
-                                        player.score.length + ' points',
-                                    ),
-                                    button(
-                                        {
-                                            class: 'btn',
-                                            style: {
-                                                marginLeft: '24px',
-                                                borderRadius: '4px',
-                                            },
-                                            onclick() {
-                                                update(i === state.turn ? { type: 'bank' } : { type: 'steal', player: i });
-                                                // do a thing idk
-                                            },
+                                        onclick() {
+                                            update(i === state.turn ? { type: 'bank' } : { type: 'steal', player: i });
+                                            // do a thing idk
                                         },
-                                        [i === state.turn ? 'Bank' : 'Steal'],
-                                    ),
-                                ]),
-                                div({ style: { display: 'flex', flexDirection: 'row' } }, [
-                                    ...player.tank.map((cards, suit) => renderCardStack(i, suit, cards.length)),
-                                ]),
-                            ],
-                        ),
-                    ),
-                ]),
+                                    },
+                                    [i === state.turn ? 'Bank' : 'Steal'],
+                                ),
+                            ]),
+                        ]),
+                    ],
+                ),
                 div(
                     {
                         style: {
@@ -345,6 +358,7 @@ const update = async (state: State, action: Action) => {
             if (other.tank[card.suit]!.length) {
                 await highlightTank(action.player, card.suit);
                 player.tank[card.suit]!.push(card, ...other.tank[card.suit]!);
+                other.tank[card.suit] = [];
             } else {
                 await expandTank(action.player, card.suit);
                 other.tank[card.suit]!.push(card);
