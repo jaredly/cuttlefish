@@ -64,7 +64,7 @@ cards = randsort(cards);
 const cardWidth = 100;
 const cardHeight = cardWidth * 1.8;
 
-const renderCardStack = (player: number, suit: number, stack: number, scale = 1) => {
+const renderCardStack = (player: number, suit: number, stack: number, highlight: boolean, scale = 1) => {
     const shared = {
         border: `5px solid ${colors[suit]}`,
         backgroundColor: colors[suit],
@@ -101,6 +101,14 @@ const renderCardStack = (player: number, suit: number, stack: number, scale = 1)
             style: {
                 ...shared,
                 transition: 'transform .3s ease',
+                ...(highlight
+                    ? {
+                          boxShadow: '8px 8px 2px black',
+                          transform: 'translate(-8px, -8px)',
+                          // outline: highlight ? '4px solid magenta' : undefined,
+                          // outlineOffset: '4px',
+                      }
+                    : {}),
             },
             id: `tank-${player}-${suit}`,
             class: `bg-base-100 shadow-sm rounded-lg`,
@@ -118,7 +126,9 @@ const renderCardStack = (player: number, suit: number, stack: number, scale = 1)
                         cy: (cardHeight / 2) * scale,
                         rx: (cardWidth / 3) * scale,
                         ry: (cardWidth / 3) * scale,
-                        fill: 'white',
+                        fill: colors[suit],
+                        stroke: 'white',
+                        'stroke-width': '8px',
                     }),
                 ],
             ),
@@ -150,8 +160,17 @@ const renderCardStack = (player: number, suit: number, stack: number, scale = 1)
     );
 };
 
+const rn = (n: number) => (Math.random() - 0.5) * n;
+
 const renderCardBack = (card: Card) => {
-    const r = (Math.PI * cardWidth) / 2 / card.back.length;
+    // const r = (Math.PI * cardWidth) / 2 / card.back.length;
+    const pairs: [number, number][] = [[0, 0]];
+    for (let i = 0; i < card.back.length - 1; i++) {
+        const xt = ((cardHeight * 2) / card.back.length) * (i + 1);
+        pairs.push([xt + rn(cardHeight / 5), xt + rn(cardHeight / 5)]);
+    }
+    pairs.push([cardHeight * 2, cardHeight * 2]);
+    const selfAt = card.back.indexOf(card.suit);
     return div(
         {
             id: 'deck-card',
@@ -164,29 +183,68 @@ const renderCardBack = (card: Card) => {
                 display: 'flex',
                 flexDirection: 'column',
                 backgroundColor: 'black',
-                gap: '8px',
+                // gap: '8px',
             },
             class: 'bg-base-100 shadow-sm rounded-lg',
         },
         [
+            // card.back.map((suit, i) =>
+            //     div({
+            //         style: {
+            //             width: cardWidth * 2 + 'px',
+            //             height: (((cardHeight * 2) / card.back.length) | 0) + 'px',
+            //             background: colors[suit],
+            //         },
+            //     }),
+            // ),
+
             node(
                 'svg',
                 {
                     width: cardWidth * 2 + 'px',
                     height: cardHeight * 2 + 'px',
+                    style: { background: colors[card.suit] },
                 },
-                card.back.map((suit, i) =>
-                    node('ellipse', {
-                        cx: cardWidth + (Math.cos(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * cardWidth) / 2,
-                        cy: cardHeight + (Math.sin(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * cardWidth) / 2,
-                        rx: r / 2,
-                        ry: r / 2,
-                        fill: colors[suit],
-                        // stroke: 'white',
-                        // 'stroke-width': 4,
-                    }),
+                card.back.map(
+                    (suit, i) =>
+                        suit === card.suit
+                            ? null
+                            : node('path', {
+                                  class: i < selfAt ? 'suit-before' : 'suit-after',
+                                  fill: colors[suit],
+                                  d: `M0 ${pairs[i]![0]} L${cardWidth * 2} ${pairs[i]![1]}
+                        L${cardWidth * 2} ${pairs[i + 1]![1]} L0 ${pairs[i + 1]![0]} Z`,
+                              }),
+                    // node('ellipse', {
+                    //     cx: cardWidth + (Math.cos(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * cardWidth) / 2,
+                    //     cy: cardHeight + (Math.sin(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * cardWidth) / 2,
+                    //     rx: r / 2,
+                    //     ry: r / 2,
+                    //     fill: colors[suit],
+                    //     // stroke: 'white',
+                    //     // 'stroke-width': 4,
+                    // }),
                 ),
             ),
+
+            // node(
+            //     'svg',
+            //     {
+            //         width: cardWidth * 2 + 'px',
+            //         height: cardHeight * 2 + 'px',
+            //     },
+            //     card.back.map((suit, i) =>
+            //         node('ellipse', {
+            //             cx: cardWidth + (Math.cos(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * cardWidth) / 2,
+            //             cy: cardHeight + (Math.sin(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * cardWidth) / 2,
+            //             rx: r / 2,
+            //             ry: r / 2,
+            //             fill: colors[suit],
+            //             // stroke: 'white',
+            //             // 'stroke-width': 4,
+            //         }),
+            //     ),
+            // ),
         ],
     );
 };
@@ -233,7 +291,9 @@ const renderGame = (state: State, update: (action: Action) => void) => {
                                         ),
                                     ]),
                                     div({ style: { display: 'flex', flexDirection: 'row' } }, [
-                                        ...player.tank.map((cards, suit) => renderCardStack(i, suit, cards.length)),
+                                        ...player.tank.map((cards, suit) =>
+                                            renderCardStack(i, suit, cards.length, state.deck[0]!.back.includes(suit)),
+                                        ),
                                     ]),
                                 ],
                             ),
@@ -299,19 +359,30 @@ const state: State = {
 const wait = (n: number) => new Promise((res) => setTimeout(res, n));
 
 const flipDeck = async () => {
-    const card = document.getElementById('deck-card');
-    if (!card) return;
-    card.style.transition = 'transform .3s ease-out';
-    card.style.transform = 'rotate3d(0, 1, 0, 90deg)';
-    await wait(300);
-    const newCard = renderCardStack(-1, +card.getAttribute('data-suit')!, 1, 2);
-    newCard.style.transform = 'rotate3d(0, 1, 0, 90deg)';
-    card.replaceWith(newCard);
-    newCard.style.transition = 'transform .3s ease-out';
-    await wait(100);
-    newCard.style.transform = 'rotate3d(0, 1, 0, 0deg)';
+    const others = document.querySelectorAll('.suit-before,.suit-after');
+    others.forEach((other) => {
+        const up = other.classList.contains('suit-before');
+        const svg = other as SVGElement;
+        svg.style.transition = 'transform .3s ease-out';
+        svg.style.transform = `translate(0, ${up ? -cardHeight * 2 : cardHeight * 2}px)`;
+    });
     await wait(300);
 };
+
+// const flipDeck = async () => {
+//     const card = document.getElementById('deck-card');
+//     if (!card) return;
+//     card.style.transition = 'transform .3s ease-out';
+//     card.style.transform = 'rotate3d(0, 1, 0, 90deg)';
+//     await wait(300);
+//     const newCard = renderCardStack(-1, +card.getAttribute('data-suit')!, 1, 2);
+//     newCard.style.transform = 'rotate3d(0, 1, 0, 90deg)';
+//     card.replaceWith(newCard);
+//     newCard.style.transition = 'transform .3s ease-out';
+//     await wait(100);
+//     newCard.style.transform = 'rotate3d(0, 1, 0, 0deg)';
+//     await wait(300);
+// };
 
 const expandTank = async (player: number, suit: number) => {
     const pile = document.getElementById(`tank-${player}-${suit}`);
@@ -326,21 +397,22 @@ const expandTank = async (player: number, suit: number) => {
 const highlightTank = async (player: number, suit: number) => {
     const pile = document.getElementById(`tank-${player}-${suit}`);
     if (!pile) return;
-    pile.style.outline = `4px solid magenta`;
+    // pile.style.outline = `4px solid magenta`;
     pile.style.zIndex = '5';
-    pile.style.transitionDuration = '.1s';
+    pile.style.transitionDuration = '.2s';
     pile.style.transitionTimingFunction = 'ease-out';
-    pile.style.transform = 'perspective(100px) translate3d(0, 0, 10px)';
-    await wait(200);
+    pile.style.transform = 'perspective(100px) translate3d(-8px, -8px, 30px)';
+    await wait(400);
+    pile.style.transitionDuration = '.1s';
     pile.style.transitionTimingFunction = 'ease-in';
-    pile.style.transform = 'perspective(100px) translate3d(0, 0, 0px)';
+    pile.style.transform = 'perspective(100px) translate3d(-8px, -8px, 0px)';
     await wait(200);
 };
 
 const update = async (state: State, action: Action) => {
     const card = state.deck.shift()!;
     const player = state.players[state.turn]!;
-    await flipDeck();
+    flipDeck();
     switch (action.type) {
         case 'bank': {
             if (player.tank[card.suit]!.length) {
