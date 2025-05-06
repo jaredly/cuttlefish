@@ -9,6 +9,8 @@ Other people dictate their choices.
 COLORS, with the option to upload custom pictures or whatever
 have the option to have other than 7 suits
 
+- [x] very basic gameplay
+
 ## Phase 2
 
 People with phones QRCode in to peerjs their way to being a player. Love it.

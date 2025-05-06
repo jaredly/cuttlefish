@@ -1,11 +1,12 @@
 // My little framework
 const svgTags = ['svg', 'path', 'rect', 'circle', 'ellipse', 'line', 'text'];
-export const node = (name: string, attrs: any | null, children?: (HTMLElement | SVGElement)[]) => {
+export type Child = HTMLElement | SVGElement | string | number | boolean | null | undefined | Child[];
+export const node = (name: string, attrs: any | null, children?: Child) => {
     if (children === undefined && (Array.isArray(attrs) || typeof attrs !== 'object')) {
         children = attrs;
         attrs = null;
     }
-    const add = (child: any) => {
+    const add = (child: Child) => {
         if (child == null) {
             return;
         } else if (Array.isArray(child)) {
@@ -36,7 +37,7 @@ export const node = (name: string, attrs: any | null, children?: (HTMLElement | 
     add(children);
     return node;
 };
-export const named = (name: string) => (attrs: any, children?: (HTMLElement | SVGElement)[]) => node(name, attrs, children);
+export const named = (name: string) => (attrs: any, children?: Child) => node(name, attrs, children);
 export const div = named('div');
 export const span = named('span');
 export const button = named('button');
