@@ -8,7 +8,15 @@ type Player = {
 
 type Action = { type: 'steal'; player: number } | { type: 'bank' };
 
+type Config = {
+    maxPoints: number;
+    suits: number;
+    backSuitCount: number;
+    startingTankSize: number;
+};
+
 type State = {
+    config: Config;
     turn: number;
     players: Player[];
     deck: Card[];
@@ -20,12 +28,6 @@ type Card = {
     back: number[];
     rot: number;
 };
-
-const maxPoints = 10;
-const suits = 7;
-const rainbow = 3;
-let cards: Card[] = [];
-const startingTankSize = 4;
 
 const colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#a65628', '#f781bf', '#999999', '#ffff33'];
 // const colors = ['green', 'pink', 'purple', 'red', 'orange', '#ffe900', 'blue'];
@@ -49,36 +51,23 @@ const randsort = <T>(a: T[]): T[] => {
         .map((a) => a[0]);
 };
 
-for (let suit = 0; suit < suits; suit++) {
-    const backs: number[][] = [];
-    combinate(rainbow - 1, suits, [suit], backs);
-    randsort(backs).forEach((back, i) => {
-        const at = i % rainbow;
-        back.splice(0, 1);
-        back.splice(at, 0, suit);
-    });
-    backs.forEach((back, i) => {
-        cards.push({ back, suit, idx: cards.length, rot: Math.random() });
-    });
-}
-
-cards = randsort(cards);
-
 const cardWidth = 100;
 const cardHeight = cardWidth * 1.8;
 
 const renderCardStack = (player: number, suit: number, stack: number, highlight: boolean, scale = 1) => {
     const shared = {
         // border: `5px solid ${colors[suit]}`,
-        backgroundColor: colors[suit],
         // border: `5px solid black`,
-        position: 'relative',
         // padding: '8px',
+
+        backgroundColor: colors[suit],
+        position: 'relative',
         margin: '8px',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
     };
+
     if (stack === 0) {
         return div(
             {
@@ -293,7 +282,7 @@ const renderGame = (state: State, update: (action: Action) => void) => {
                                                 gap: '8px',
                                             },
                                         },
-                                        [player.name, div({ style: { flex: 1 } }, []), points(player.score.length)],
+                                        [player.name, div({ style: { flex: 1 } }, []), points(player.score.length, state.config.maxPoints)],
                                     ),
                                     div(
                                         {
@@ -301,7 +290,7 @@ const renderGame = (state: State, update: (action: Action) => void) => {
                                                 display: 'flex',
                                                 flexDirection: 'row',
                                                 height: cardHeight + 'px',
-                                                width: cardWidth * suits + 16 * suits + 'px',
+                                                width: cardWidth * state.config.suits + 16 * state.config.suits + 'px',
                                             },
                                         },
                                         [
@@ -355,21 +344,57 @@ const addPlayer = (name: string, state: State) => {
     }
     const player: Player = { tank: [], score: [], name };
     state.players.push(player);
-    for (let i = 0; i < suits; i++) {
+    for (let i = 0; i < state.config.suits; i++) {
         player.tank.push([]);
     }
-    for (let i = 0; i < startingTankSize; i++) {
+    for (let i = 0; i < state.config.startingTankSize; i++) {
         const [got] = state.deck.splice((Math.random() * state.deck.length) | 0, 1);
         player.tank[got!.suit]!.push(got!);
     }
     return true;
 };
 
-const state: State = {
-    players: [],
-    deck: cards,
-    turn: 0,
+const makeCards = (suits: number, rainbow: number) => {
+    let cards: Card[] = [];
+
+    for (let suit = 0; suit < suits; suit++) {
+        const backs: number[][] = [];
+        combinate(rainbow - 1, suits, [suit], backs);
+        randsort(backs).forEach((back, i) => {
+            const at = i % rainbow;
+            back.splice(0, 1);
+            back.splice(at, 0, suit);
+        });
+        backs.forEach((back, i) => {
+            cards.push({ back, suit, idx: cards.length, rot: Math.random() });
+        });
+    }
+
+    return randsort(cards);
 };
+
+const newGame = (config: Config, players: string[]): State => {
+    const state: State = {
+        config,
+        players: [],
+        deck: makeCards(config.suits, config.backSuitCount),
+        turn: 0,
+    };
+
+    players.forEach((name) => addPlayer(name, state));
+
+    return state;
+};
+
+const state = newGame(
+    {
+        maxPoints: 10,
+        suits: 7,
+        backSuitCount: 3,
+        startingTankSize: 4,
+    },
+    ['james', 'selina', 'jared'],
+);
 
 const wait = (n: number) => new Promise((res) => setTimeout(res, n));
 
@@ -455,9 +480,7 @@ const update = async (state: State, action: Action) => {
     state.turn %= state.players.length;
 };
 
-['james', 'selina', 'jared'].forEach((name) => addPlayer(name, state));
-
-const points = (num: number) => {
+const points = (num: number, maxPoints: number) => {
     const cards = [];
     for (let i = 0; i < maxPoints; i++) {
         cards.push(
