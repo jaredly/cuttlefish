@@ -64,21 +64,46 @@ cards = randsort(cards);
 const cardWidth = 100;
 const cardHeight = cardWidth * 1.8;
 
-const renderCardStack = (suit: number, stack: number) => {
+const renderCardStack = (player: number, suit: number, stack: number) => {
+    const shared = {
+        border: `5px solid ${colors[suit]}`,
+        backgroundColor: colors[suit],
+        // border: `5px solid black`,
+        position: 'relative',
+        padding: '8px',
+        margin: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+    };
+    if (stack === 0) {
+        return div(
+            {
+                style: {
+                    ...shared,
+                    marginInline: 0,
+                    width: 0,
+                    borderWidth: 0,
+                    padding: 0,
+                    // transition: '.3s ease margin-inline border width',
+                    transitionDuration: '.3s',
+                    transitionTimingFunction: 'ease',
+                    transitionProperty: 'margin-inline, border-width, width, padding',
+                },
+                id: `tank-${player}-${suit}`,
+                class: `bg-base-100 shadow-sm rounded-lg`,
+            },
+            [],
+        );
+    }
     return div(
         {
             style: {
-                border: `5px solid ${colors[suit]}`,
-                backgroundColor: colors[suit],
-                // border: `5px solid black`,
-                position: 'relative',
-                padding: '8px',
-                margin: '8px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
+                ...shared,
+                transition: 'transform .3s ease',
             },
-            class: 'bg-base-100 shadow-sm rounded-lg',
+            id: `tank-${player}-${suit}`,
+            class: `bg-base-100 shadow-sm rounded-lg`,
         },
         [
             node(
@@ -210,7 +235,7 @@ const renderGame = (state: State, update: (action: Action) => void) => {
                                     ),
                                 ]),
                                 div({ style: { display: 'flex', flexDirection: 'row' } }, [
-                                    ...player.tank.map((cards, suit) => (cards.length ? renderCardStack(suit, cards.length) : null)),
+                                    ...player.tank.map((cards, suit) => renderCardStack(i, suit, cards.length)),
                                 ]),
                             ],
                         ),
@@ -226,7 +251,7 @@ const renderGame = (state: State, update: (action: Action) => void) => {
                             alignItems: 'center',
                         },
                     },
-                    [node('h1', ['The Deck']), renderCardBack(state.deck[0]!)],
+                    [renderCardBack(state.deck[0]!)],
                 ),
             ],
             // cards.map((card) => renderCardBack(card)),
@@ -256,15 +281,43 @@ const state: State = {
     turn: 0,
 };
 
-const update = (state: State, action: Action) => {
+const wait = (n: number) => new Promise((res) => setTimeout(res, n));
+
+const expandTank = async (player: number, suit: number) => {
+    const pile = document.getElementById(`tank-${player}-${suit}`);
+    if (!pile) return;
+    pile.style.borderWidth = '5px';
+    pile.style.width = cardWidth + 16 + 10 + 'px';
+    pile.style.marginInline = '8px';
+    pile.style.padding = '8px';
+    await wait(400);
+};
+
+const highlightTank = async (player: number, suit: number) => {
+    const pile = document.getElementById(`tank-${player}-${suit}`);
+    if (!pile) return;
+    pile.style.outline = `4px solid magenta`;
+    pile.style.zIndex = '5';
+    pile.style.transitionDuration = '.1s';
+    pile.style.transitionTimingFunction = 'ease-out';
+    pile.style.transform = 'perspective(100px) translate3d(0, 0, 10px)';
+    await wait(200);
+    pile.style.transitionTimingFunction = 'ease-in';
+    pile.style.transform = 'perspective(100px) translate3d(0, 0, 0px)';
+    await wait(200);
+};
+
+const update = async (state: State, action: Action) => {
     const card = state.deck.shift()!;
     const player = state.players[state.turn]!;
     switch (action.type) {
         case 'bank': {
             if (player.tank[card.suit]!.length) {
+                await highlightTank(state.turn, card.suit);
                 player.score.push(card, ...player.tank[card.suit]!);
                 player.tank[card.suit] = [];
             } else {
+                await expandTank(state.turn, card.suit);
                 player.tank[card.suit]!.push(card);
             }
             break;
@@ -272,8 +325,10 @@ const update = (state: State, action: Action) => {
         case 'steal': {
             const other = state.players[action.player]!;
             if (other.tank[card.suit]!.length) {
+                await highlightTank(action.player, card.suit);
                 player.tank[card.suit]!.push(card, ...other.tank[card.suit]!);
             } else {
+                await expandTank(action.player, card.suit);
                 other.tank[card.suit]!.push(card);
             }
             break;
@@ -286,8 +341,10 @@ const update = (state: State, action: Action) => {
 ['james', 'selina', 'jared'].forEach((name) => addPlayer(name, state));
 
 const rerender = () => {
-    renderGame(state, (action) => {
-        update(state, action);
+    renderGame(state, async (action) => {
+        console.log('doing a thing');
+        await update(state, action);
+        console.log('done it');
         rerender();
     });
 };
