@@ -27,7 +27,7 @@ const run = (state: State) => {
 // run(state);
 newGameForm(
     { maxPoints: 10, suits: colors.map((color, index) => ({ color, index })), backSuitCount: 3, startingTankSize: 4 },
-    [],
+    ['Person 1', 'Person 2', 'Person 3'],
     (config, names) => {
         run(newGame(config, names));
     },

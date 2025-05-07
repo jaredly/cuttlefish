@@ -45,7 +45,7 @@ const renderNames = (names: string[]) => {
 
 const renderSuits = (config: Config) => {
     let root = div({}, [
-        div({}, 'suits'),
+        div({}, 'Suits'),
         config.suits.map((suit, i) => {
             let bgc;
 
@@ -102,19 +102,32 @@ const renderSuits = (config: Config) => {
 export const newGameForm = (config: Config, players: string[], onComplete: (config: Config, players: string[]) => void) => {
     render(
         document.body,
-        div({}, [
-            node('h1', 'Hello Folks'),
-            renderSuits(config),
-            renderNames(players),
-            button(
-                {
-                    class: 'btn btn-primary',
-                    onclick() {
-                        onComplete(config, players);
-                    },
+        div(
+            {
+                // class: 'card',
+                style: {
+                    inset: '100px',
+                    position: 'absolute',
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'column',
+                    gap: '16px',
                 },
-                'Ok folks',
-            ),
-        ]),
+            },
+            [
+                node('h1', { style: { fontSize: '2em' } }, 'Cuttlefish'),
+                renderSuits(config),
+                renderNames(players),
+                button(
+                    {
+                        class: 'btn btn-primary',
+                        onclick() {
+                            onComplete(config, players);
+                        },
+                    },
+                    'Ok folks',
+                ),
+            ],
+        ),
     );
 };
