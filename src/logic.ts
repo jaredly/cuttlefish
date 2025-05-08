@@ -49,7 +49,8 @@ const randsort = <T>(a: T[]): T[] => {
         .sort((a, b) => a[1] - b[1])
         .map((a) => a[0]);
 };
-const renderCardStack = (player: number, suit: Suit, stack: number, highlight: boolean, scale = 1) => {
+
+export const renderCardStack = (player: number, suit: Suit, stack: number, highlight: boolean, scale = 1) => {
     const shared = {
         // border: `5px solid ${colors[suit]}`,
         // border: `5px solid black`,
@@ -112,10 +113,22 @@ const renderCardStack = (player: number, suit: Suit, stack: number, highlight: b
                         cy: (cardHeight / 2) * scale,
                         rx: (cardWidth / 3) * scale,
                         ry: (cardWidth / 3) * scale,
-                        fill: suit.color,
+                        fill: suit.text ? 'white' : suit.color,
                         stroke: 'white',
                         'stroke-width': '8px',
                     }),
+                    suit.text
+                        ? node(
+                              'text',
+                              {
+                                  x: (cardWidth / 2) * scale,
+                                  y: (cardHeight / 2) * scale + cardWidth / 5,
+                                  'text-anchor': 'middle',
+                                  'font-size': cardWidth / 2 + 'px',
+                              },
+                              [suit.text],
+                          )
+                        : null,
                 ],
             ),
             stack > 1

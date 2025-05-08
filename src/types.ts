@@ -10,6 +10,7 @@ export type Suit = { index: number; color: string; picture?: string; text?: stri
 export type Config = {
     maxPoints: number;
     suits: Suit[];
+    themeName: string;
     backSuitCount: number;
     startingTankSize: number;
 };

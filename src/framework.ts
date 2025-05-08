@@ -19,6 +19,7 @@ export const node = (name: string, attrs: any | null, children?: Child) => {
         }
     };
     const node = svgTags.includes(name) ? document.createElementNS('http://www.w3.org/2000/svg', name) : document.createElement(name);
+    add(children);
     if (attrs) {
         Object.keys(attrs).forEach((k) => {
             if (k === 'style') {
@@ -34,7 +35,6 @@ export const node = (name: string, attrs: any | null, children?: Child) => {
             }
         });
     }
-    add(children);
     return node;
 };
 export const named = (name: string) => (attrs: any, children?: Child) => node(name, attrs, children);

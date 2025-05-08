@@ -1,5 +1,6 @@
 import { button, div, node, render } from './framework';
-import type { Config } from './types';
+import { renderCardStack } from './logic';
+import type { Config, Suit } from './types';
 
 const renderNames = (names: string[]) => {
     let root = div({}, [
@@ -43,31 +44,41 @@ const renderNames = (names: string[]) => {
     return root;
 };
 
-const renderSuits = (config: Config) => {
+const renderSuits = (suits: Suit[]) => {
     let root = div({}, [
         div({}, 'Suits'),
-        config.suits.map((suit, i) => {
-            let bgc;
-
+        suits.map((suit, i) => {
             return div({ style: { display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '8px', gap: '8px' } }, [
-                (bgc = div(
-                    {
-                        style: {
-                            width: '2em',
-                            height: '2em',
-                            backgroundColor: suit.color,
-                        },
-                    },
-                    [],
-                )),
                 node(
                     'input',
                     {
                         class: 'input',
+                        type: 'color',
                         value: suit.color,
                         oninput(evt: KeyboardEvent) {
                             suit.color = (evt.target as HTMLInputElement).value;
-                            bgc.style.backgroundColor = suit.color;
+                        },
+                    },
+                    [],
+                ),
+                node(
+                    'input',
+                    {
+                        class: 'input',
+                        value: suit.text ?? '',
+                        oninput(evt: KeyboardEvent) {
+                            suit.text = (evt.currentTarget as HTMLInputElement).value;
+                        },
+                    },
+                    [],
+                ),
+                node(
+                    'input',
+                    {
+                        class: 'input',
+                        value: suit.picture ?? '',
+                        oninput(evt: KeyboardEvent) {
+                            suit.text = (evt.currentTarget as HTMLInputElement).value;
                         },
                     },
                     [],
@@ -76,9 +87,9 @@ const renderSuits = (config: Config) => {
                     {
                         class: 'btn',
                         onclick() {
-                            config.suits.splice(i, 1);
-                            config.suits.forEach((s, i) => (s.index = i));
-                            root.replaceWith(renderSuits(config));
+                            suits.splice(i, 1);
+                            suits.forEach((s, i) => (s.index = i));
+                            root.replaceWith(renderSuits(suits));
                         },
                     },
                     ['x'],
@@ -89,8 +100,8 @@ const renderSuits = (config: Config) => {
             {
                 class: 'btn btn-primary',
                 onclick() {
-                    config.suits.push({ color: 'black', index: config.suits.length });
-                    root.replaceWith(renderSuits(config));
+                    suits.push({ color: 'black', index: suits.length });
+                    root.replaceWith(renderSuits(suits));
                 },
             },
             'Add suit',
@@ -99,12 +110,63 @@ const renderSuits = (config: Config) => {
     return root;
 };
 
-export const newGameForm = (config: Config, players: string[], onComplete: (config: Config, players: string[]) => void) => {
+export type SuitTheme = { suits: Suit[]; name: string };
+
+const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitTheme[]) => void) => {
+    render(
+        document.body,
+        div({}, [
+            allSuits.map((sc, i) =>
+                div({}, [
+                    node('input', {
+                        class: 'input',
+                        placeholder: 'Theme name',
+                        value: sc.name,
+                        oninput() {
+                            sc.name = this.value;
+                        },
+                    }),
+                    renderSuits(sc.suits),
+                    button(
+                        {
+                            class: 'btn btn-primary',
+                            onclick() {
+                                allSuits.splice(i + 1, 0, { ...sc, suits: sc.suits.slice() });
+                                renderSuitsEditor(allSuits, oncomplete);
+                            },
+                        },
+                        ['Clone theme'],
+                    ),
+                ]),
+            ),
+            button(
+                {
+                    class: 'btn btn-primary',
+                    onclick() {
+                        allSuits.push({ name: 'New Theme', suits: [{ color: 'red', index: 0 }] });
+                        renderSuitsEditor(allSuits, oncomplete);
+                    },
+                },
+                ['Add theme'],
+            ),
+            button(
+                {
+                    class: 'btn btn-primary',
+                    onclick() {
+                        oncomplete(allSuits);
+                    },
+                },
+                ['Return'],
+            ),
+        ]),
+    );
+};
+
+export const newGameForm = (config: Config, allSuits: SuitTheme[], players: string[], onComplete: (config: Config, players: string[]) => void) => {
     render(
         document.body,
         div(
             {
-                // class: 'card',
                 style: {
                     inset: '100px',
                     position: 'absolute',
@@ -116,7 +178,38 @@ export const newGameForm = (config: Config, players: string[], onComplete: (conf
             },
             [
                 node('h1', { style: { fontSize: '2em' } }, 'Cuttlefish'),
-                renderSuits(config),
+                div({}, [
+                    node(
+                        'select',
+                        {
+                            value: config.themeName,
+                            onchange() {
+                                const sc = allSuits.find((sc) => sc.name === this.value);
+                                if (!sc) return;
+                                config.suits = sc.suits;
+                                config.themeName = sc.name;
+                                newGameForm(config, allSuits, players, onComplete);
+                            },
+                        },
+                        allSuits.map((sc) => node('option', { value: sc.name }, [sc.name])),
+                    ),
+                    button(
+                        {
+                            class: 'btn btn-primary',
+                            onclick() {
+                                renderSuitsEditor(allSuits, (allSuits) => {
+                                    localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
+                                    newGameForm(config, allSuits, players, onComplete);
+                                });
+                            },
+                        },
+                        'Edit Themes',
+                    ),
+                ]),
+                div(
+                    { style: { display: 'flex' } },
+                    config.suits.map((suit) => renderCardStack(0, suit, 1, false)),
+                ),
                 renderNames(players),
                 button(
                     {
@@ -125,7 +218,7 @@ export const newGameForm = (config: Config, players: string[], onComplete: (conf
                             onComplete(config, players);
                         },
                     },
-                    'Ok folks',
+                    'Start Game',
                 ),
             ],
         ),
