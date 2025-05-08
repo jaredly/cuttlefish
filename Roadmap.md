@@ -19,4 +19,8 @@ Get Game Setup going, and localStorage state saving.
 
 ## Phase 3
 
+upload pictureeeees
+
+## Phase 4
+
 People with phones QRCode in to peerjs their way to being a player. Love it.

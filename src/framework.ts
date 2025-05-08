@@ -1,5 +1,5 @@
 // My little framework
-const svgTags = ['svg', 'path', 'rect', 'circle', 'ellipse', 'line', 'text'];
+const svgTags = ['svg', 'path', 'rect', 'circle', 'ellipse', 'line', 'text', 'image', 'defs', 'clipPath'];
 export type Child = HTMLElement | SVGElement | string | number | boolean | null | undefined | Child[];
 export const node = (name: string, attrs: any | null, children?: Child) => {
     if (children === undefined && (Array.isArray(attrs) || typeof attrs !== 'object')) {

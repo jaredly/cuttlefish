@@ -1,4 +1,5 @@
 import { div, node, render, button } from './framework';
+import { loadBlob } from './newGameForm';
 import type { Suit, Card, State, Action, Player, Config } from './types';
 
 export const points = (num: number, maxPoints: number) => {
@@ -108,6 +109,24 @@ export const renderCardStack = (player: number, suit: Suit, stack: number, highl
                     height: cardHeight * scale + 'px',
                 },
                 [
+                    node('defs', [
+                        node('clipPath', { id: 'circle' }, [
+                            node('ellipse', {
+                                cx: (cardWidth / 2) * scale,
+                                cy: (cardHeight / 2) * scale,
+                                rx: (cardWidth / 3) * scale,
+                                ry: (cardWidth / 3) * scale,
+                                // fill: suit.text ? 'white' : suit.color,
+                                // stroke: 'white',
+                                // 'stroke-width': '8px',
+                            }),
+                        ]),
+                    ]),
+                    //   <defs>
+                    //     <clipPath id="cut-off-bottom">
+                    //       <rect x="0" y="0" width="200" height="100" />
+                    //     </clipPath>
+                    //   </defs>
                     node('ellipse', {
                         cx: (cardWidth / 2) * scale,
                         cy: (cardHeight / 2) * scale,
@@ -117,7 +136,16 @@ export const renderCardStack = (player: number, suit: Suit, stack: number, highl
                         stroke: 'white',
                         'stroke-width': '8px',
                     }),
-                    suit.text
+                    suit.picture
+                        ? node('image', {
+                              'clip-path': 'url(#circle)',
+                              href: loadBlob(suit.picture),
+                              width: (cardWidth / 3) * 2 * scale + 'px',
+                              height: (cardWidth / 3) * 2 * scale + 'px',
+                              x: (cardWidth / 2) * scale - (cardWidth / 3) * scale,
+                              y: (cardHeight / 2) * scale - (cardWidth / 3) * scale,
+                          })
+                        : suit.text
                         ? node(
                               'text',
                               {
@@ -201,16 +229,61 @@ const renderCardBack = (card: Card) => {
                     height: cardHeight * 2 + 'px',
                     style: { background: card.suit.color },
                 },
-                card.back.map((suit, i) =>
-                    suit.index === card.suit.index
-                        ? null
-                        : node('path', {
-                              class: i < selfAt ? 'suit-before' : 'suit-after',
-                              fill: suit.color,
-                              d: `M0 ${pairs[i]![0]} L${cardWidth * 2} ${pairs[i]![1]}
+                [
+                    node('defs', [
+                        card.back.map((suit, i) =>
+                            node('clipPath', { id: 'circle' + i }, [
+                                node('ellipse', {
+                                    cx: cardWidth,
+                                    cy: ((cardHeight * 2) / card.back.length) * (i + 0.5),
+                                    rx: cardWidth / 3,
+                                    ry: cardWidth / 3,
+                                }),
+                            ]),
+                        ),
+                    ]),
+                    card.back.map((suit, i) => [
+                        suit.index === card.suit.index
+                            ? null
+                            : node('path', {
+                                  class: i < selfAt ? 'suit-before' : 'suit-after',
+                                  fill: suit.color,
+                                  d: `M0 ${pairs[i]![0]} L${cardWidth * 2} ${pairs[i]![1]}
                         L${cardWidth * 2} ${pairs[i + 1]![1]} L0 ${pairs[i + 1]![0]} Z`,
-                          }),
-                ),
+                              }),
+                        node('ellipse', {
+                            cx: cardWidth,
+                            class: i === selfAt ? '' : i < selfAt ? 'suit-before' : 'suit-after',
+                            cy: ((cardHeight * 2) / card.back.length) * (i + 0.5),
+                            rx: cardWidth / 3,
+                            ry: cardWidth / 3,
+                            fill: 'white',
+                        }),
+                        suit.picture
+                            ? node('image', {
+                                  class: i === selfAt ? '' : i < selfAt ? 'suit-before' : 'suit-after',
+                                  'clip-path': `url(#circle${i})`,
+                                  href: loadBlob(suit.picture),
+                                  width: (cardWidth / 3) * 2 + 'px',
+                                  height: (cardWidth / 3) * 2 + 'px',
+                                  x: cardWidth - cardWidth / 3,
+                                  y: ((cardHeight * 2) / card.back.length) * (i + 0.5) - cardWidth / 3,
+                              })
+                            : suit.text
+                            ? node(
+                                  'text',
+                                  {
+                                      class: i === selfAt ? '' : i < selfAt ? 'suit-before' : 'suit-after',
+                                      x: cardWidth,
+                                      y: ((cardHeight * 2) / card.back.length) * (i + 0.5) + cardWidth / 5,
+                                      'text-anchor': 'middle',
+                                      'font-size': cardWidth / 2 + 'px',
+                                  },
+                                  [suit.text],
+                              )
+                            : null,
+                    ]),
+                ],
             ),
             // node(
             //     'svg',
@@ -346,7 +419,7 @@ const addPlayer = (name: string, state: State) => {
     }
     return true;
 };
-const makeCards = (suits: Suit[], rainbow: number) => {
+const makeCards = (suits: Suit[], rainbow: number, minCount: number) => {
     let cards: Card[] = [];
 
     for (let suit = 0; suit < suits.length; suit++) {
@@ -361,6 +434,12 @@ const makeCards = (suits: Suit[], rainbow: number) => {
             cards.push({ back: back.map((i) => suits[i]!), suit: suits[suit]!, idx: cards.length, rot: Math.random() });
         });
     }
+    if (cards.length < minCount) {
+        const orig = cards.slice();
+        while (cards.length < minCount) {
+            cards.push(...orig);
+        }
+    }
 
     return randsort(cards);
 };
@@ -368,7 +447,7 @@ export const newGame = (config: Config, players: string[]): State => {
     const state: State = {
         config,
         players: [],
-        deck: makeCards(config.suits, config.backSuitCount),
+        deck: makeCards(config.suits, config.backSuitCount, players.length * 15),
         turn: 0,
     };
 
@@ -380,7 +459,7 @@ export const newGame = (config: Config, players: string[]): State => {
 export const update = async (state: State, action: Action) => {
     const card = state.deck.shift()!;
     const player = state.players[state.turn]!;
-    flipDeck();
+    await flipDeck();
     switch (action.type) {
         case 'bank': {
             if (player.tank[card.suit.index]!.length) {
@@ -420,7 +499,7 @@ const flipDeck = async () => {
         svg.style.transition = 'transform .3s ease-out';
         svg.style.transform = `translate(0, ${up ? -cardHeight * 2 : cardHeight * 2}px)`;
     });
-    await wait(300);
+    await wait(500);
 };
 
 // const flipDeck = async () => {
