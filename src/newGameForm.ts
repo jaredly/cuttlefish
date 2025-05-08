@@ -1,4 +1,4 @@
-import { button, div, node, render } from './framework';
+import { button, div, node, render, type Child } from './framework';
 import { renderCardStack } from './logic';
 import type { Config, Suit } from './types';
 
@@ -47,7 +47,7 @@ const renderNames = (names: string[]) => {
     return root;
 };
 
-const renderSuits = (suits: Suit[]) => {
+const renderSuits = (suits: Suit[], bottomRight?: Child) => {
     let root = div({}, [
         div({}, 'Suits'),
         suits.map((suit, i) => {
@@ -95,30 +95,33 @@ const renderSuits = (suits: Suit[]) => {
                         onclick() {
                             suits.splice(i, 1);
                             suits.forEach((s, i) => (s.index = i));
-                            root.replaceWith(renderSuits(suits));
+                            root.replaceWith(renderSuits(suits, bottomRight));
                         },
                     },
                     ['x'],
                 ),
             ]);
         }),
-        button(
-            {
-                class: 'btn btn-primary',
-                onclick() {
-                    suits.push({ color: 'black', index: suits.length });
-                    root.replaceWith(renderSuits(suits));
+        div({}, [
+            button(
+                {
+                    class: 'btn btn-primary',
+                    onclick() {
+                        suits.push({ color: 'black', index: suits.length });
+                        root.replaceWith(renderSuits(suits, bottomRight));
+                    },
                 },
-            },
-            'Add suit',
-        ),
+                'Add suit',
+            ),
+            bottomRight,
+        ]),
     ]);
     return root;
 };
 
-export type SuitTheme = { suits: Suit[]; name: string };
+export type SuitTheme = { suits: Suit[]; name: string; border?: boolean };
 
-const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitTheme[]) => void) => {
+const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitTheme[], selected: SuitTheme) => void) => {
     render(
         document.body,
         div({ style: { display: 'flex', flexDirection: 'column', alignItems: 'center' } }, [
@@ -134,10 +137,22 @@ const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitThe
                                 sc.name = this.value;
                             },
                         }),
-
                         button(
                             {
-                                class: 'btn btn-primary',
+                                class: 'btn btn-secondary',
+                                style: { marginLeft: '16px' },
+                                onclick() {
+                                    oncomplete(allSuits, sc);
+                                },
+                            },
+                            ['Select Theme'],
+                        ),
+                    ]),
+                    renderSuits(
+                        sc.suits,
+                        button(
+                            {
+                                class: 'btn btn-secondary',
                                 style: { marginLeft: '16px' },
                                 onclick() {
                                     allSuits.splice(i + 1, 0, { ...sc, suits: sc.suits.slice() });
@@ -146,8 +161,7 @@ const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitThe
                             },
                             ['Clone theme'],
                         ),
-                    ]),
-                    renderSuits(sc.suits),
+                    ),
                 ]),
             ),
             button(
@@ -160,16 +174,6 @@ const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitThe
                     },
                 },
                 ['Add theme'],
-            ),
-            button(
-                {
-                    class: 'btn btn-secondary',
-                    style: { marginBottom: '100px' },
-                    onclick() {
-                        oncomplete(allSuits);
-                    },
-                },
-                ['Return'],
             ),
         ]),
     );
@@ -192,32 +196,33 @@ export const newGameForm = (config: Config, allSuits: SuitTheme[], players: stri
             [
                 node('h1', { style: { fontSize: '3em', fontWeight: 'bold' } }, 'Cuttlefish'),
                 div({}, [
-                    node(
-                        'select',
-                        {
-                            value: config.themeName,
-                            onchange() {
-                                const sc = allSuits.find((sc) => sc.name === this.value);
-                                if (!sc) return;
-                                config.suits = sc.suits;
-                                config.themeName = sc.name;
-                                newGameForm(config, allSuits, players, onComplete);
-                            },
-                        },
-                        allSuits.map((sc) => node('option', { value: sc.name }, [sc.name])),
-                    ),
+                    // node(
+                    //     'select',
+                    //     {
+                    //         value: config.themeName,
+                    //         onchange() {
+                    //             const sc = allSuits.find((sc) => sc.name === this.value);
+                    //             if (!sc) return;
+                    //             config.suits = sc.suits;
+                    //             config.themeName = sc.name;
+                    //             newGameForm(config, allSuits, players, onComplete);
+                    //         },
+                    //     },
+                    //     allSuits.map((sc) => node('option', { value: sc.name }, [sc.name])),
+                    // ),
                     button(
                         {
                             class: 'btn btn-secondary btn-sm',
-                            style: { marginLeft: '32px' },
                             onclick() {
-                                renderSuitsEditor(allSuits, (allSuits) => {
+                                renderSuitsEditor(allSuits, (allSuits, selected) => {
                                     localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
+                                    config.suits = selected.suits;
+                                    config.themeName = selected.name;
                                     newGameForm(config, allSuits, players, onComplete);
                                 });
                             },
                         },
-                        'Edit Themes',
+                        'Change Theme',
                     ),
                 ]),
                 div(
