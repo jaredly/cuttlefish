@@ -179,10 +179,17 @@ const renderSuits = (suits: Suit[], bottomRight?: Child) => {
 
 export type SuitTheme = { suits: Suit[]; name: string; border?: boolean };
 
-const renderSuitThemeEditor = (suitTheme: SuitTheme, onSelect: (st: SuitTheme) => void, onSave: () => void, editing = false) => {
+const renderSuitThemeEditor = (
+    suitTheme: SuitTheme,
+    onSelect: (st: SuitTheme) => void,
+    onSave: () => void,
+    onDuplicate: () => void,
+    onDelete: () => void,
+    editing = false,
+) => {
     let root: HTMLElement | SVGElement;
     const toggle = () => {
-        root!.replaceWith(renderSuitThemeEditor(suitTheme, onSelect, onSave, !editing));
+        root!.replaceWith(renderSuitThemeEditor(suitTheme, onSelect, onSave, onDuplicate, onDelete, !editing));
     };
     const shared = { padding: '32px' };
     root = editing
@@ -248,6 +255,28 @@ const renderSuitThemeEditor = (suitTheme: SuitTheme, onSelect: (st: SuitTheme) =
                       },
                       ['Edit'],
                   ),
+                  button(
+                      {
+                          class: 'btn btn-sm btn-secondary',
+                          style: { marginLeft: '16px' },
+                          onclick() {
+                              onDuplicate();
+                          },
+                      },
+                      ['Duplicate'],
+                  ),
+                  button(
+                      {
+                          class: 'btn btn-sm btn-secondary',
+                          style: { marginLeft: '16px' },
+                          onclick() {
+                              if (confirm('Really delete?')) {
+                                  onDelete();
+                              }
+                          },
+                      },
+                      ['Delete'],
+                  ),
               ]),
               div(
                   { style: { display: 'flex' } },
@@ -271,6 +300,16 @@ const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitThe
                         },
                         () => {
                             localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
+                        },
+                        () => {
+                            allSuits.splice(i + 1, 0, { ...sc, name: sc.name + ' 2' });
+                            localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
+                            renderSuitsEditor(allSuits, oncomplete);
+                        },
+                        () => {
+                            allSuits.splice(i, 1);
+                            localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
+                            renderSuitsEditor(allSuits, oncomplete);
                         },
                     ),
                 // div({ style: { display: 'flex', flexDirection: 'column', padding: '16px', margin: '16px', boxShadow: '1px 1px 3px #aaa' } }, [

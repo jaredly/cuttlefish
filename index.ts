@@ -25,7 +25,7 @@ if (localStorage['cuttlefish:themes']) {
 
 // run(state);
 newGameForm(
-    { maxPoints: 10, suits: themes[2]!.suits, themeName: themes[2]!.name, backSuitCount: 3, startingTankSize: 4 },
+    { maxPoints: 10, suits: themes[0]!.suits, themeName: themes[0]!.name, backSuitCount: 3, startingTankSize: 4 },
     themes,
     ['Person 1', 'Person 2', 'Person 3'],
     (config, names) => {
