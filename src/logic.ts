@@ -321,6 +321,18 @@ const renderCardBack = (card: Card) => {
     );
 };
 export const renderGame = (state: State, update: (action: Action) => void) => {
+    let columns = 1;
+    let rows = state.players.length;
+    const basePlayerSize = { height: 256, width: 950 };
+    let playerScale = window.innerHeight / rows / basePlayerSize.height;
+    const availableWidth = window.innerWidth - 300; // the draw pile
+    if (basePlayerSize.width * playerScale < availableWidth / 2) {
+        columns = 2;
+        playerScale = availableWidth / 2 / basePlayerSize.width;
+        console.log("rescale", availableWidth / 2, basePlayerSize.width, playerScale);
+        // playerScale = Math.min(playerScale, window.innerHeight / (state.players.length / 2) / basePlayerSize.height);
+    }
+
     render(
         document.body,
         div({ style: { display: "flex", flexDirection: "row", alignItems: "center", height: "100vh", padding: "16px" } }, [
@@ -328,8 +340,11 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                 {
                     style: {
                         flex: 1,
-                        display: "grid",
-                        gridTemplateColumns: "1fr max-content",
+                        flexWrap: "wrap",
+                        display: "flex",
+
+                        // display: "grid",
+                        // gridTemplateColumns: "1fr max-content",
                         alignItems: "flex-start",
                         justifyContent: "center",
                     },
@@ -338,68 +353,81 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                     state.players.map((player, i) => [
                         div(
                             {
-                                style:
-                                    i === state.turn
-                                        ? {
-                                              outline: "5px dotted magenta",
-                                              borderRadius: "10px",
-                                          }
-                                        : {},
+                                style: {
+                                    width: "950px",
+                                    height: "256px",
+                                    zoom: playerScale,
+                                    display: "flex",
+                                },
                             },
                             [
                                 div(
                                     {
                                         style: {
-                                            display: "flex",
-                                            flexDirection: "row",
-                                            padding: "8px 16px",
-                                            fontSize: "1.5em",
-                                            fontWeight: "bold",
-                                            alignItems: "center",
-                                            gap: "8px",
-                                        },
-                                    },
-                                    [player.name, div({ style: { flex: 1 } }, []), points(player.score.length, state.config.maxPoints)],
-                                ),
-                                div(
-                                    {
-                                        style: {
-                                            display: "flex",
-                                            flexDirection: "row",
-                                            height: cardHeight + "px",
-                                            width: cardWidth * state.config.suits.length + 16 * state.config.suits.length + "px",
+                                            ...(i === state.turn
+                                                ? {
+                                                      outline: "5px dotted magenta",
+                                                      borderRadius: "10px",
+                                                  }
+                                                : {}),
                                         },
                                     },
                                     [
-                                        ...player.tank.map((cards, suit) =>
-                                            renderCardStack(
-                                                i,
-                                                state.config.suits[suit]!,
-                                                // cards[0]?.suit,
-                                                cards.length,
-                                                state.deck[0]!.back.some((b) => b.index === suit),
-                                            ),
+                                        div(
+                                            {
+                                                style: {
+                                                    display: "flex",
+                                                    flexDirection: "row",
+                                                    padding: "8px 16px",
+                                                    fontSize: "1.5em",
+                                                    fontWeight: "bold",
+                                                    alignItems: "center",
+                                                    gap: "8px",
+                                                },
+                                            },
+                                            [player.name, div({ style: { flex: 1 } }, []), points(player.score.length, state.config.maxPoints)],
+                                        ),
+                                        div(
+                                            {
+                                                style: {
+                                                    display: "flex",
+                                                    flexDirection: "row",
+                                                    height: cardHeight + "px",
+                                                    width: cardWidth * state.config.suits.length + 16 * state.config.suits.length + "px",
+                                                },
+                                            },
+                                            [
+                                                ...player.tank.map((cards, suit) =>
+                                                    renderCardStack(
+                                                        i,
+                                                        state.config.suits[suit]!,
+                                                        // cards[0]?.suit,
+                                                        cards.length,
+                                                        state.deck[0]!.back.some((b) => b.index === suit),
+                                                    ),
+                                                ),
+                                            ],
                                         ),
                                     ],
                                 ),
+                                div({ style: { alignSelf: "anchor-center" } }, [
+                                    button(
+                                        {
+                                            class: "btn btn-xl btn-" + (i === state.turn ? "primary" : "secondary"),
+                                            style: {
+                                                marginLeft: "24px",
+                                                borderRadius: "4px",
+                                            },
+                                            onclick() {
+                                                update(i === state.turn ? { type: "bank" } : { type: "steal", player: i });
+                                                // do a thing idk
+                                            },
+                                        },
+                                        [i === state.turn ? "Bank" : "Steal"],
+                                    ),
+                                ]),
                             ],
                         ),
-                        div({ style: { alignSelf: "anchor-center" } }, [
-                            button(
-                                {
-                                    class: "btn btn-xl btn-" + (i === state.turn ? "primary" : "secondary"),
-                                    style: {
-                                        marginLeft: "24px",
-                                        borderRadius: "4px",
-                                    },
-                                    onclick() {
-                                        update(i === state.turn ? { type: "bank" } : { type: "steal", player: i });
-                                        // do a thing idk
-                                    },
-                                },
-                                [i === state.turn ? "Bank" : "Steal"],
-                            ),
-                        ]),
                     ]),
                 ],
             ),
@@ -407,7 +435,7 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                 {
                     style: {
                         alignSelf: "center",
-                        flex: 1,
+                        // flex: 1,
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
@@ -433,6 +461,7 @@ const addPlayer = (name: string, state: State) => {
     }
     return true;
 };
+
 const makeCards = (suits: Suit[], rainbow: number, minCount: number) => {
     let cards: Card[] = [];
 
@@ -457,11 +486,12 @@ const makeCards = (suits: Suit[], rainbow: number, minCount: number) => {
 
     return randsort(cards);
 };
+
 export const newGame = (config: Config, players: string[]): State => {
     const state: State = {
         config,
         players: [],
-        deck: makeCards(config.suits, config.backSuitCount, players.length * 15),
+        deck: makeCards(config.suits, config.backSuitCount, players.length * (config.startingTankSize + 11)),
         turn: 0,
     };
 

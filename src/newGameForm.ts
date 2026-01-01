@@ -11,7 +11,11 @@ const renderNames = (names: string[]) => {
                     class: "btn btn-sm btn-secondary",
                     style: { marginLeft: "16px" },
                     onclick() {
-                        names.push("My Friend");
+                        let num = 1;
+                        while (names.includes("My Friend " + num)) {
+                            num++;
+                        }
+                        names.push("My Friend " + num);
                         root.replaceWith(renderNames(names));
                     },
                 },
