@@ -21,6 +21,8 @@ Get Game Setup going, and localStorage state saving.
 
 upload pictureeeees
 
+-- stalled out here, because having just one screen going is plenty fine --
+
 ## Phase 4
 
 People with phones QRCode in to peerjs their way to being a player. Love it.

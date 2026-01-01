@@ -1,6 +1,6 @@
-import { div, node, render, button } from './framework';
-import { loadBlob } from './newGameForm';
-import type { Suit, Card, State, Action, Player, Config } from './types';
+import { div, node, render, button } from "./framework";
+import { loadBlob } from "./newGameForm";
+import type { Suit, Card, State, Action, Player, Config } from "./types";
 
 export const points = (num: number, maxPoints: number) => {
     const cards = [];
@@ -9,11 +9,11 @@ export const points = (num: number, maxPoints: number) => {
             div(
                 {
                     style: {
-                        background: i < num ? 'black' : 'white',
-                        border: '2px solid black',
-                        borderRadius: '4px',
-                        width: cardWidth / 3 + 'px',
-                        height: cardHeight / 3 + 'px',
+                        background: i < num ? "black" : "white",
+                        border: "2px solid black",
+                        borderRadius: "4px",
+                        width: cardWidth / 3 + "px",
+                        height: cardHeight / 3 + "px",
                     },
                 },
                 [],
@@ -23,9 +23,9 @@ export const points = (num: number, maxPoints: number) => {
     return div(
         {
             style: {
-                display: 'inline-flex',
-                flexDirection: 'row',
-                gap: '8px',
+                display: "inline-flex",
+                flexDirection: "row",
+                gap: "8px",
             },
         },
         cards,
@@ -51,17 +51,17 @@ const randsort = <T>(a: T[]): T[] => {
         .map((a) => a[0]);
 };
 
-export const renderCardStack = (player: number, suit: Suit, stack: number, highlight: boolean, scale = 1) => {
+export const renderCardStack = (player: number, suit: Suit, stack: number, highlight: boolean | null, scale = 1) => {
     const shared = {
         // border: `5px solid ${colors[suit]}`,
         // border: `5px solid black`,
         // padding: '8px',
         backgroundColor: suit.color,
-        position: 'relative',
-        margin: '8px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
+        position: "relative",
+        margin: "8px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
     };
 
     if (stack === 0 || !suit) {
@@ -74,9 +74,9 @@ export const renderCardStack = (player: number, suit: Suit, stack: number, highl
                     borderWidth: 0,
                     padding: 0,
                     // transition: '.3s ease margin-inline border width',
-                    transitionDuration: '.3s',
-                    transitionTimingFunction: 'ease',
-                    transitionProperty: 'margin-inline, border-width, width, padding',
+                    transitionDuration: ".3s",
+                    transitionTimingFunction: "ease",
+                    transitionProperty: "margin-inline, border-width, width, padding",
                 },
                 id: `tank-${player}-${suit.index}`,
                 class: `bg-base-100 shadow-sm rounded-lg`,
@@ -88,30 +88,44 @@ export const renderCardStack = (player: number, suit: Suit, stack: number, highl
         {
             style: {
                 ...shared,
-                transition: 'transform .3s ease',
+                transition: "transform .3s ease",
                 ...(highlight
                     ? {
-                          boxShadow: '8px 8px 2px black',
-                          transform: 'translate(-8px, -8px)',
-                          // outline: highlight ? '4px solid magenta' : undefined,
+                          boxShadow: `
+                          white 4px 4px 0,
+                          white -4px 4px 0,
+                          white 4px -4px 0,
+                          white -4px -4px 0,
+                          gold 12px 16px 0,
+                          gold -12px 16px 0,
+                          gold 12px -16px 0,
+                          gold -12px -16px 0
+                          `,
+                          // boxShadow: "8px 8px 2px black",
+                          // transform: "translate(-8px, -8px)",
+                          // outline: highlight ? "4px solid magenta" : undefined,
                           // outlineOffset: '4px',
                       }
-                    : {}),
+                    : highlight === false
+                      ? {
+                            transform: "scale(.8,.8)",
+                        }
+                      : {}),
             },
             id: `tank-${player}-${suit.index}`,
             class: `bg-base-100 shadow-sm rounded-lg`,
         },
         [
             node(
-                'svg',
+                "svg",
                 {
-                    width: cardWidth * scale + 'px',
-                    height: cardHeight * scale + 'px',
+                    width: cardWidth * scale + "px",
+                    height: cardHeight * scale + "px",
                 },
                 [
-                    node('defs', [
-                        node('clipPath', { id: 'circle' }, [
-                            node('ellipse', {
+                    node("defs", [
+                        node("clipPath", { id: "circle" }, [
+                            node("ellipse", {
                                 cx: (cardWidth / 2) * scale,
                                 cy: (cardHeight / 2) * scale,
                                 rx: (cardWidth / 3) * scale,
@@ -127,60 +141,60 @@ export const renderCardStack = (player: number, suit: Suit, stack: number, highl
                     //       <rect x="0" y="0" width="200" height="100" />
                     //     </clipPath>
                     //   </defs>
-                    node('ellipse', {
+                    node("ellipse", {
                         cx: (cardWidth / 2) * scale,
                         cy: (cardHeight / 2) * scale,
                         rx: (cardWidth / 3) * scale,
                         ry: (cardWidth / 3) * scale,
-                        fill: suit.text ? 'white' : suit.color,
-                        stroke: 'white',
-                        'stroke-width': '8px',
+                        fill: suit.text ? "white" : suit.color,
+                        stroke: "white",
+                        "stroke-width": "8px",
                     }),
                     suit.picture
-                        ? node('image', {
-                              'clip-path': 'url(#circle)',
+                        ? node("image", {
+                              "clip-path": "url(#circle)",
                               href: loadBlob(suit.picture),
-                              width: (cardWidth / 3) * 2 * scale + 'px',
-                              height: (cardWidth / 3) * 2 * scale + 'px',
+                              width: (cardWidth / 3) * 2 * scale + "px",
+                              height: (cardWidth / 3) * 2 * scale + "px",
                               x: (cardWidth / 2) * scale - (cardWidth / 3) * scale,
                               y: (cardHeight / 2) * scale - (cardWidth / 3) * scale,
                           })
                         : suit.text
-                        ? node(
-                              'text',
-                              {
-                                  x: (cardWidth / 2) * scale,
-                                  y: (cardHeight / 2) * scale + cardWidth / 5,
-                                  'text-anchor': 'middle',
-                                  'font-size': cardWidth / 2 + 'px',
-                              },
-                              [suit.text],
-                          )
-                        : null,
+                          ? node(
+                                "text",
+                                {
+                                    x: (cardWidth / 2) * scale,
+                                    y: (cardHeight / 2) * scale + cardWidth / 5,
+                                    "text-anchor": "middle",
+                                    "font-size": cardWidth / 2 + "px",
+                                },
+                                [suit.text],
+                            )
+                          : null,
                 ],
             ),
             stack > 1
                 ? div(
                       {
                           style: {
-                              position: 'absolute',
-                              top: '-20px',
-                              left: '50%',
-                              marginLeft: '-15px',
-                              fontWeight: 'bold',
-                              backgroundColor: 'white',
-                              width: '30px',
-                              height: '30px',
-                              textAlign: 'center',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              borderRadius: '50%',
-                              boxShadow: '-1px 1px 5px rgba(0,0,0,0.5)',
+                              position: "absolute",
+                              top: "-20px",
+                              left: "50%",
+                              marginLeft: "-15px",
+                              fontWeight: "bold",
+                              backgroundColor: "white",
+                              width: "30px",
+                              height: "30px",
+                              textAlign: "center",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: "50%",
+                              boxShadow: "-1px 1px 5px rgba(0,0,0,0.5)",
                               border: `2px solid ${suit.color}`,
                           },
                       },
-                      [stack + ''],
+                      [stack + ""],
                   )
                 : null,
         ],
@@ -198,19 +212,19 @@ const renderCardBack = (card: Card) => {
     const selfAt = card.back.findIndex((s) => s.index === card.suit.index);
     return div(
         {
-            id: 'deck-card',
-            'data-suit': card.suit,
+            id: "deck-card",
+            "data-suit": card.suit,
             style: {
                 // border: `5px solid ${colors[card.suit]}`,
                 border: `5px solid black`,
-                padding: '8px',
-                margin: '8px',
-                display: 'flex',
-                flexDirection: 'column',
-                backgroundColor: 'black',
+                padding: "8px",
+                margin: "8px",
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor: "black",
                 // gap: '8px',
             },
-            class: 'bg-base-100 shadow-sm rounded-lg',
+            class: "bg-base-100 shadow-sm rounded-lg",
         },
         [
             // card.back.map((suit, i) =>
@@ -223,17 +237,17 @@ const renderCardBack = (card: Card) => {
             //     }),
             // ),
             node(
-                'svg',
+                "svg",
                 {
-                    width: cardWidth * 2 + 'px',
-                    height: cardHeight * 2 + 'px',
+                    width: cardWidth * 2 + "px",
+                    height: cardHeight * 2 + "px",
                     style: { background: card.suit.color },
                 },
                 [
-                    node('defs', [
+                    node("defs", [
                         card.back.map((suit, i) =>
-                            node('clipPath', { id: 'circle' + i }, [
-                                node('ellipse', {
+                            node("clipPath", { id: "circle" + i }, [
+                                node("ellipse", {
                                     cx: cardWidth,
                                     cy: ((cardHeight * 2) / card.back.length) * (i + 0.5),
                                     rx: cardWidth / 3,
@@ -245,43 +259,43 @@ const renderCardBack = (card: Card) => {
                     card.back.map((suit, i) => [
                         suit.index === card.suit.index
                             ? null
-                            : node('path', {
-                                  class: i < selfAt ? 'suit-before' : 'suit-after',
+                            : node("path", {
+                                  class: i < selfAt ? "suit-before" : "suit-after",
                                   fill: suit.color,
                                   d: `M0 ${pairs[i]![0]} L${cardWidth * 2} ${pairs[i]![1]}
                         L${cardWidth * 2} ${pairs[i + 1]![1]} L0 ${pairs[i + 1]![0]} Z`,
                               }),
-                        node('ellipse', {
+                        node("ellipse", {
                             cx: cardWidth,
-                            class: i === selfAt ? '' : i < selfAt ? 'suit-before' : 'suit-after',
+                            class: i === selfAt ? "" : i < selfAt ? "suit-before" : "suit-after",
                             cy: ((cardHeight * 2) / card.back.length) * (i + 0.5),
                             rx: cardWidth / 3,
                             ry: cardWidth / 3,
-                            fill: 'white',
+                            fill: "white",
                         }),
                         suit.picture
-                            ? node('image', {
-                                  class: i === selfAt ? '' : i < selfAt ? 'suit-before' : 'suit-after',
-                                  'clip-path': `url(#circle${i})`,
+                            ? node("image", {
+                                  class: i === selfAt ? "" : i < selfAt ? "suit-before" : "suit-after",
+                                  "clip-path": `url(#circle${i})`,
                                   href: loadBlob(suit.picture),
-                                  width: (cardWidth / 3) * 2 + 'px',
-                                  height: (cardWidth / 3) * 2 + 'px',
+                                  width: (cardWidth / 3) * 2 + "px",
+                                  height: (cardWidth / 3) * 2 + "px",
                                   x: cardWidth - cardWidth / 3,
                                   y: ((cardHeight * 2) / card.back.length) * (i + 0.5) - cardWidth / 3,
                               })
                             : suit.text
-                            ? node(
-                                  'text',
-                                  {
-                                      class: i === selfAt ? '' : i < selfAt ? 'suit-before' : 'suit-after',
-                                      x: cardWidth,
-                                      y: ((cardHeight * 2) / card.back.length) * (i + 0.5) + cardWidth / 5,
-                                      'text-anchor': 'middle',
-                                      'font-size': cardWidth / 2 + 'px',
-                                  },
-                                  [suit.text],
-                              )
-                            : null,
+                              ? node(
+                                    "text",
+                                    {
+                                        class: i === selfAt ? "" : i < selfAt ? "suit-before" : "suit-after",
+                                        x: cardWidth,
+                                        y: ((cardHeight * 2) / card.back.length) * (i + 0.5) + cardWidth / 5,
+                                        "text-anchor": "middle",
+                                        "font-size": cardWidth / 2 + "px",
+                                    },
+                                    [suit.text],
+                                )
+                              : null,
                     ]),
                 ],
             ),
@@ -309,15 +323,15 @@ const renderCardBack = (card: Card) => {
 export const renderGame = (state: State, update: (action: Action) => void) => {
     render(
         document.body,
-        div({ style: { display: 'flex', flexDirection: 'row', alignItems: 'center', height: '100vh', padding: '16px' } }, [
+        div({ style: { display: "flex", flexDirection: "row", alignItems: "center", height: "100vh", padding: "16px" } }, [
             div(
                 {
                     style: {
                         flex: 1,
-                        display: 'grid',
-                        gridTemplateColumns: '1fr max-content',
-                        alignItems: 'flex-start',
-                        justifyContent: 'center',
+                        display: "grid",
+                        gridTemplateColumns: "1fr max-content",
+                        alignItems: "flex-start",
+                        justifyContent: "center",
                     },
                 },
                 [
@@ -327,8 +341,8 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                                 style:
                                     i === state.turn
                                         ? {
-                                              outline: '5px dotted magenta',
-                                              borderRadius: '10px',
+                                              outline: "5px dotted magenta",
+                                              borderRadius: "10px",
                                           }
                                         : {},
                             },
@@ -336,13 +350,13 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                                 div(
                                     {
                                         style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            padding: '8px 16px',
-                                            fontSize: '1.5em',
-                                            fontWeight: 'bold',
-                                            alignItems: 'center',
-                                            gap: '8px',
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            padding: "8px 16px",
+                                            fontSize: "1.5em",
+                                            fontWeight: "bold",
+                                            alignItems: "center",
+                                            gap: "8px",
                                         },
                                     },
                                     [player.name, div({ style: { flex: 1 } }, []), points(player.score.length, state.config.maxPoints)],
@@ -350,10 +364,10 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                                 div(
                                     {
                                         style: {
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                            height: cardHeight + 'px',
-                                            width: cardWidth * state.config.suits.length + 16 * state.config.suits.length + 'px',
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            height: cardHeight + "px",
+                                            width: cardWidth * state.config.suits.length + 16 * state.config.suits.length + "px",
                                         },
                                     },
                                     [
@@ -370,20 +384,20 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                                 ),
                             ],
                         ),
-                        div({ style: { alignSelf: 'anchor-center' } }, [
+                        div({ style: { alignSelf: "anchor-center" } }, [
                             button(
                                 {
-                                    class: 'btn btn-xl btn-' + (i === state.turn ? 'primary' : 'secondary'),
+                                    class: "btn btn-xl btn-" + (i === state.turn ? "primary" : "secondary"),
                                     style: {
-                                        marginLeft: '24px',
-                                        borderRadius: '4px',
+                                        marginLeft: "24px",
+                                        borderRadius: "4px",
                                     },
                                     onclick() {
-                                        update(i === state.turn ? { type: 'bank' } : { type: 'steal', player: i });
+                                        update(i === state.turn ? { type: "bank" } : { type: "steal", player: i });
                                         // do a thing idk
                                     },
                                 },
-                                [i === state.turn ? 'Bank' : 'Steal'],
+                                [i === state.turn ? "Bank" : "Steal"],
                             ),
                         ]),
                     ]),
@@ -392,11 +406,11 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
             div(
                 {
                     style: {
-                        alignSelf: 'center',
+                        alignSelf: "center",
                         flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
                     },
                 },
                 [renderCardBack(state.deck[0]!)],
@@ -461,7 +475,7 @@ export const update = async (state: State, action: Action) => {
     const player = state.players[state.turn]!;
     await flipDeck();
     switch (action.type) {
-        case 'bank': {
+        case "bank": {
             if (player.tank[card.suit.index]!.length) {
                 await highlightTank(state.turn, card.suit.index);
                 player.score.push(card, ...player.tank[card.suit.index]!);
@@ -472,7 +486,7 @@ export const update = async (state: State, action: Action) => {
             }
             break;
         }
-        case 'steal': {
+        case "steal": {
             const other = state.players[action.player]!;
             if (other.tank[card.suit.index]!.length) {
                 await highlightTank(action.player, card.suit.index);
@@ -492,11 +506,11 @@ export const update = async (state: State, action: Action) => {
 const wait = (n: number) => new Promise((res) => setTimeout(res, n));
 
 const flipDeck = async () => {
-    const others = document.querySelectorAll('.suit-before,.suit-after');
+    const others = document.querySelectorAll(".suit-before,.suit-after");
     others.forEach((other) => {
-        const up = other.classList.contains('suit-before');
+        const up = other.classList.contains("suit-before");
         const svg = other as SVGElement;
-        svg.style.transition = 'transform .3s ease-out';
+        svg.style.transition = "transform .3s ease-out";
         svg.style.transform = `translate(0, ${up ? -cardHeight * 2 : cardHeight * 2}px)`;
     });
     await wait(500);
@@ -520,8 +534,8 @@ const flipDeck = async () => {
 const expandTank = async (player: number, suit: number) => {
     const pile = document.getElementById(`tank-${player}-${suit}`);
     if (!pile) return;
-    pile.style.width = cardWidth + 'px';
-    pile.style.marginInline = '8px';
+    pile.style.width = cardWidth + "px";
+    pile.style.marginInline = "8px";
     await wait(400);
 };
 
@@ -529,13 +543,13 @@ const highlightTank = async (player: number, suit: number) => {
     const pile = document.getElementById(`tank-${player}-${suit}`);
     if (!pile) return;
     // pile.style.outline = `4px solid magenta`;
-    pile.style.zIndex = '5';
-    pile.style.transitionDuration = '.2s';
-    pile.style.transitionTimingFunction = 'ease-out';
-    pile.style.transform = 'perspective(100px) translate3d(-8px, -8px, 30px)';
+    pile.style.zIndex = "5";
+    pile.style.transitionDuration = ".2s";
+    pile.style.transitionTimingFunction = "ease-out";
+    pile.style.transform = "perspective(100px) translate3d(-8px, -8px, 30px)";
     await wait(400);
-    pile.style.transitionDuration = '.1s';
-    pile.style.transitionTimingFunction = 'ease-in';
-    pile.style.transform = 'perspective(100px) translate3d(-8px, -8px, 0px)';
+    pile.style.transitionDuration = ".1s";
+    pile.style.transitionTimingFunction = "ease-in";
+    pile.style.transform = "perspective(100px) translate3d(-8px, -8px, 0px)";
     await wait(200);
 };

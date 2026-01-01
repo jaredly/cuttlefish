@@ -1,29 +1,29 @@
-import { button, div, node, render, type Child } from './framework';
-import { renderCardStack } from './logic';
-import type { Config, Suit } from './types';
+import { button, div, node, render, type Child } from "./framework";
+import { renderCardStack } from "./logic";
+import type { Config, Suit } from "./types";
 
 const renderNames = (names: string[]) => {
-    let root = div({ style: { display: 'flex', flexDirection: 'column', alignItems: 'center' } }, [
-        div({ style: { marginBottom: '16px', display: 'flex', flexDirection: 'row', alignItems: 'center' } }, [
-            div({ style: { fontSize: '1.5em' } }, 'Players'),
+    let root = div({ style: { display: "flex", flexDirection: "column", alignItems: "center" } }, [
+        div({ style: { marginBottom: "16px", display: "flex", flexDirection: "row", alignItems: "center" } }, [
+            div({ style: { fontSize: "1.5em" } }, "Players"),
             button(
                 {
-                    class: 'btn btn-sm btn-secondary',
-                    style: { marginLeft: '16px' },
+                    class: "btn btn-sm btn-secondary",
+                    style: { marginLeft: "16px" },
                     onclick() {
-                        names.push('My Friend');
+                        names.push("My Friend");
                         root.replaceWith(renderNames(names));
                     },
                 },
-                'Add player',
+                "Add player",
             ),
         ]),
         names.map((name, i) => {
-            return div({ style: { display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '8px', gap: '8px' } }, [
+            return div({ style: { display: "flex", flexDirection: "row", alignItems: "center", padding: "8px", gap: "8px" } }, [
                 node(
-                    'input',
+                    "input",
                     {
-                        class: 'input',
+                        class: "input",
                         value: name,
                         oninput(evt: KeyboardEvent) {
                             names[i] = (evt.target as HTMLInputElement).value;
@@ -33,13 +33,13 @@ const renderNames = (names: string[]) => {
                 ),
                 button(
                     {
-                        class: 'btn',
+                        class: "btn",
                         onclick() {
                             names.splice(i, 1);
                             root.replaceWith(renderNames(names));
                         },
                     },
-                    ['x'],
+                    ["x"],
                 ),
             ]);
         }),
@@ -62,10 +62,10 @@ export const loadBlob = (fullKey: string) => {
 };
 
 const rescaleImage = async (src: string, size: number) => {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext("2d")!;
     const image = new Image();
     await new Promise((res) => {
         image.onload = res;
@@ -83,9 +83,9 @@ const imageInput = (value: string | undefined, onChange: (value: string | undefi
     const src = value ? loadBlob(value) : null;
     // let root: HTMLElement | SVGElement
     let root = div({}, [
-        src ? node('img', { src, width: '50px', height: '50px' }) : '',
-        node('input', {
-            type: 'file',
+        src ? node("img", { src, width: "50px", height: "50px" }) : "",
+        node("input", {
+            type: "file",
             onchange() {
                 console.log(this);
                 this.files[0];
@@ -93,7 +93,7 @@ const imageInput = (value: string | undefined, onChange: (value: string | undefi
                 reader.onload = async () => {
                     const dataUrl = reader.result as string;
                     const rescaled = await rescaleImage(dataUrl, 200);
-                    const key = 'img-' + Math.random().toString(32).slice(2);
+                    const key = "img-" + Math.random().toString(32).slice(2);
                     localStorage[key] = rescaled;
                     onChange(key);
                     root.replaceWith(imageInput(key, onChange));
@@ -108,7 +108,7 @@ const imageInput = (value: string | undefined, onChange: (value: string | undefi
                     root.replaceWith(imageInput(undefined, onChange));
                 },
             },
-            'Clear',
+            "Clear",
         ),
     ]);
     return root;
@@ -116,16 +116,16 @@ const imageInput = (value: string | undefined, onChange: (value: string | undefi
 
 const renderSuits = (suits: Suit[], bottomRight?: Child) => {
     let root = div({}, [
-        div({}, 'Suits'),
+        div({}, "Suits"),
         suits.map((suit, i) => {
-            return div({ style: { display: 'flex', flexDirection: 'row', alignItems: 'center', padding: '8px', gap: '8px' } }, [
+            return div({ style: { display: "flex", flexDirection: "row", alignItems: "center", padding: "8px", gap: "8px" } }, [
                 node(
-                    'input',
+                    "input",
                     {
-                        class: 'input',
-                        type: 'color',
+                        class: "input",
+                        type: "color",
                         value: suit.color,
-                        style: { width: '4em' },
+                        style: { width: "4em" },
                         oninput(evt: KeyboardEvent) {
                             suit.color = (evt.target as HTMLInputElement).value;
                         },
@@ -133,11 +133,11 @@ const renderSuits = (suits: Suit[], bottomRight?: Child) => {
                     [],
                 ),
                 node(
-                    'input',
+                    "input",
                     {
-                        class: 'input',
-                        value: suit.text ?? '',
-                        style: { width: '10em' },
+                        class: "input",
+                        value: suit.text ?? "",
+                        style: { width: "10em" },
                         oninput(evt: KeyboardEvent) {
                             suit.text = (evt.currentTarget as HTMLInputElement).value;
                         },
@@ -149,27 +149,27 @@ const renderSuits = (suits: Suit[], bottomRight?: Child) => {
                 }),
                 button(
                     {
-                        class: 'btn',
+                        class: "btn",
                         onclick() {
                             suits.splice(i, 1);
                             suits.forEach((s, i) => (s.index = i));
                             root.replaceWith(renderSuits(suits, bottomRight));
                         },
                     },
-                    ['x'],
+                    ["x"],
                 ),
             ]);
         }),
         div({}, [
             button(
                 {
-                    class: 'btn btn-primary',
+                    class: "btn btn-primary",
                     onclick() {
-                        suits.push({ color: 'black', index: suits.length });
+                        suits.push({ color: "black", index: suits.length });
                         root.replaceWith(renderSuits(suits, bottomRight));
                     },
                 },
-                'Add suit',
+                "Add suit",
             ),
             bottomRight,
         ]),
@@ -191,14 +191,14 @@ const renderSuitThemeEditor = (
     const toggle = () => {
         root!.replaceWith(renderSuitThemeEditor(suitTheme, onSelect, onSave, onDuplicate, onDelete, !editing));
     };
-    const shared = { padding: '32px' };
+    const shared = { padding: "32px" };
     root = editing
         ? div({ style: shared }, [
-              div({ style: { display: 'flex', flexDirection: 'column', padding: '16px', margin: '16px', boxShadow: '1px 1px 3px #aaa' } }, [
-                  div({ style: { display: 'flex', flexDirection: 'row', alignItems: 'center' } }, [
-                      node('input', {
-                          class: 'input',
-                          placeholder: 'Theme name',
+              div({ style: { display: "flex", flexDirection: "column", padding: "16px", margin: "16px", boxShadow: "1px 1px 3px #aaa" } }, [
+                  div({ style: { display: "flex", flexDirection: "row", alignItems: "center" } }, [
+                      node("input", {
+                          class: "input",
+                          placeholder: "Theme name",
                           value: suitTheme.name,
                           oninput() {
                               suitTheme.name = this.value;
@@ -206,14 +206,14 @@ const renderSuitThemeEditor = (
                       }),
                       button(
                           {
-                              class: 'btn btn-secondary',
-                              style: { marginLeft: '16px' },
+                              class: "btn btn-secondary",
+                              style: { marginLeft: "16px" },
                               onclick() {
                                   onSave();
                                   toggle();
                               },
                           },
-                          ['Save'],
+                          ["Save"],
                       ),
                   ]),
                   renderSuits(
@@ -233,54 +233,54 @@ const renderSuitThemeEditor = (
               ]),
           ])
         : div({ style: shared }, [
-              div({ style: { display: 'flex', flexDirection: 'row', alignItems: 'center' } }, [
-                  node('h1', {}, [suitTheme.name]),
+              div({ style: { display: "flex", flexDirection: "row", alignItems: "center" } }, [
+                  node("h1", {}, [suitTheme.name]),
                   button(
                       {
-                          class: 'btn btn-sm btn-primary',
-                          style: { marginLeft: '16px' },
+                          class: "btn btn-sm btn-primary",
+                          style: { marginLeft: "16px" },
                           onclick() {
                               onSelect(suitTheme);
                           },
                       },
-                      ['Select'],
+                      ["Select"],
                   ),
                   button(
                       {
-                          class: 'btn btn-sm btn-secondary',
-                          style: { marginLeft: '16px' },
+                          class: "btn btn-sm btn-secondary",
+                          style: { marginLeft: "16px" },
                           onclick() {
                               toggle();
                           },
                       },
-                      ['Edit'],
+                      ["Edit"],
                   ),
                   button(
                       {
-                          class: 'btn btn-sm btn-secondary',
-                          style: { marginLeft: '16px' },
+                          class: "btn btn-sm btn-secondary",
+                          style: { marginLeft: "16px" },
                           onclick() {
                               onDuplicate();
                           },
                       },
-                      ['Duplicate'],
+                      ["Duplicate"],
                   ),
                   button(
                       {
-                          class: 'btn btn-sm btn-secondary',
-                          style: { marginLeft: '16px' },
+                          class: "btn btn-sm btn-secondary",
+                          style: { marginLeft: "16px" },
                           onclick() {
-                              if (confirm('Really delete?')) {
+                              if (confirm("Really delete?")) {
                                   onDelete();
                               }
                           },
                       },
-                      ['Delete'],
+                      ["Delete"],
                   ),
               ]),
               div(
-                  { style: { display: 'flex' } },
-                  suitTheme.suits.map((suit) => renderCardStack(0, suit, 1, false)),
+                  { style: { display: "flex" } },
+                  suitTheme.suits.map((suit) => renderCardStack(0, suit, 1, null)),
               ),
           ]);
     return root;
@@ -289,8 +289,8 @@ const renderSuitThemeEditor = (
 const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitTheme[], selected: SuitTheme) => void) => {
     render(
         document.body,
-        div({ style: { display: 'flex', flexDirection: 'column', alignItems: 'center' } }, [
-            node('h1', { style: { fontSize: '3em', fontWeight: 'bold' } }, 'Themes'),
+        div({ style: { display: "flex", flexDirection: "column", alignItems: "center" } }, [
+            node("h1", { style: { fontSize: "3em", fontWeight: "bold" } }, "Themes"),
             allSuits.map(
                 (sc, i) =>
                     renderSuitThemeEditor(
@@ -299,16 +299,16 @@ const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitThe
                             oncomplete(allSuits, sc);
                         },
                         () => {
-                            localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
+                            localStorage["cuttlefish:themes"] = JSON.stringify(allSuits);
                         },
                         () => {
-                            allSuits.splice(i + 1, 0, { ...sc, name: sc.name + ' 2' });
-                            localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
+                            allSuits.splice(i + 1, 0, { ...sc, name: sc.name + " 2" });
+                            localStorage["cuttlefish:themes"] = JSON.stringify(allSuits);
                             renderSuitsEditor(allSuits, oncomplete);
                         },
                         () => {
                             allSuits.splice(i, 1);
-                            localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
+                            localStorage["cuttlefish:themes"] = JSON.stringify(allSuits);
                             renderSuitsEditor(allSuits, oncomplete);
                         },
                     ),
@@ -351,14 +351,14 @@ const renderSuitsEditor = (allSuits: SuitTheme[], oncomplete: (allSuits: SuitThe
             ),
             button(
                 {
-                    class: 'btn btn-primary',
-                    style: { marginBottom: '16px' },
+                    class: "btn btn-primary",
+                    style: { marginBottom: "16px" },
                     onclick() {
-                        allSuits.push({ name: 'New Theme', suits: [{ color: 'red', index: 0 }] });
+                        allSuits.push({ name: "New Theme", suits: [{ color: "red", index: 0 }] });
                         renderSuitsEditor(allSuits, oncomplete);
                     },
                 },
-                ['Add theme'],
+                ["Add theme"],
             ),
         ]),
     );
@@ -370,20 +370,20 @@ export const newGameForm = (config: Config, allSuits: SuitTheme[], players: stri
         div(
             {
                 style: {
-                    inset: '100px',
-                    position: 'absolute',
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexDirection: 'column',
-                    gap: '16px',
+                    inset: "100px",
+                    position: "absolute",
+                    display: "flex",
+                    alignItems: "center",
+                    flexDirection: "column",
+                    gap: "16px",
                 },
             },
             [
-                node('h1', { style: { fontSize: '3em', fontWeight: 'bold' } }, 'Cuttlefish'),
+                node("h1", { style: { fontSize: "3em", fontWeight: "bold" } }, "Cuttlefish"),
                 div({}, [
                     button(
                         {
-                            class: 'btn btn-secondary btn-sm',
+                            class: "btn btn-secondary btn-sm",
                             onclick() {
                                 renderSuitsEditor(allSuits, (allSuits, selected) => {
                                     // localStorage['cuttlefish:themes'] = JSON.stringify(allSuits);
@@ -393,22 +393,22 @@ export const newGameForm = (config: Config, allSuits: SuitTheme[], players: stri
                                 });
                             },
                         },
-                        'Change Theme',
+                        "Change Theme",
                     ),
                 ]),
                 div(
-                    { style: { display: 'flex' } },
-                    config.suits.map((suit) => renderCardStack(0, suit, 1, false)),
+                    { style: { display: "flex" } },
+                    config.suits.map((suit) => renderCardStack(0, suit, 1, null)),
                 ),
                 renderNames(players),
                 button(
                     {
-                        class: 'btn btn-primary',
+                        class: "btn btn-primary",
                         onclick() {
                             onComplete(config, players);
                         },
                     },
-                    'Start Game',
+                    "Start Game",
                 ),
             ],
         ),
