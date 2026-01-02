@@ -4,7 +4,8 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "deploy": "bun build.ts && cd build && quick cuttlefish"
+        "deploy": "bun build.ts && cd build && quick cuttlefish",
+        "start": "bun index.html"
     },
     "devDependencies": {
         "@types/bun": "latest"
