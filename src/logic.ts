@@ -299,38 +299,20 @@ const renderCardBack = (card: Card) => {
                     ]),
                 ],
             ),
-            // node(
-            //     'svg',
-            //     {
-            //         width: cardWidth * 2 + 'px',
-            //         height: cardHeight * 2 + 'px',
-            //     },
-            //     card.back.map((suit, i) =>
-            //         node('ellipse', {
-            //             cx: cardWidth + (Math.cos(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * cardWidth) / 2,
-            //             cy: cardHeight + (Math.sin(((Math.PI * 2) / card.back.length) * i - Math.PI * 2 * card.rot) * cardWidth) / 2,
-            //             rx: r / 2,
-            //             ry: r / 2,
-            //             fill: colors[suit],
-            //             // stroke: 'white',
-            //             // 'stroke-width': 4,
-            //         }),
-            //     ),
-            // ),
         ],
     );
 };
 export const renderGame = (state: State, update: (action: Action) => void) => {
-    let columns = 1;
-    let rows = state.players.length;
+    // let columns = 1;
+    const rows = state.players.length;
     const basePlayerSize = { height: 256, width: 950 };
-    let playerScale = window.innerHeight / rows / basePlayerSize.height;
+    const availableHeight = window.innerHeight - 40;
     const availableWidth = window.innerWidth - 300; // the draw pile
+    let playerScale = Math.min(availableHeight / rows / basePlayerSize.height, availableWidth / basePlayerSize.width);
     if (basePlayerSize.width * playerScale < availableWidth / 2) {
-        columns = 2;
+        // columns = 2;
         playerScale = availableWidth / 2 / basePlayerSize.width;
         console.log("rescale", availableWidth / 2, basePlayerSize.width, playerScale);
-        // playerScale = Math.min(playerScale, window.innerHeight / (state.players.length / 2) / basePlayerSize.height);
     }
 
     render(
@@ -346,7 +328,7 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                         // display: "grid",
                         // gridTemplateColumns: "1fr max-content",
                         alignItems: "flex-start",
-                        justifyContent: "center",
+                        justifyContent: "flex-start",
                     },
                 },
                 [
@@ -383,9 +365,38 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                                                     fontWeight: "bold",
                                                     alignItems: "center",
                                                     gap: "8px",
+                                                    ...(i === state.turn
+                                                        ? {
+                                                              borderRadius: "10px",
+                                                              backgroundColor: "magenta",
+                                                              color: "white",
+                                                          }
+                                                        : null),
                                                 },
                                             },
-                                            [player.name, div({ style: { flex: 1 } }, []), points(player.score.length, state.config.maxPoints)],
+                                            [
+                                                player.name,
+                                                div({ style: { alignSelf: "anchor-center" } }, [
+                                                    button(
+                                                        {
+                                                            class: "btn btn-l btn-" + (i === state.turn ? "primary" : "secondary"),
+                                                            style: {
+                                                                marginLeft: "24px",
+                                                                borderRadius: "4px",
+                                                            },
+                                                            onclick(evt: MouseEvent) {
+                                                                evt.stopPropagation();
+                                                                update(i === state.turn ? { type: "bank" } : { type: "steal", player: i });
+                                                                // do a thing idk
+                                                            },
+                                                        },
+                                                        [i === state.turn ? "Bank" : "Steal"],
+                                                    ),
+                                                ]),
+
+                                                div({ style: { flex: 1 } }, []),
+                                                points(player.score.length, state.config.maxPoints),
+                                            ],
                                         ),
                                         div(
                                             {
@@ -410,22 +421,6 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                                         ),
                                     ],
                                 ),
-                                div({ style: { alignSelf: "anchor-center" } }, [
-                                    button(
-                                        {
-                                            class: "btn btn-xl btn-" + (i === state.turn ? "primary" : "secondary"),
-                                            style: {
-                                                marginLeft: "24px",
-                                                borderRadius: "4px",
-                                            },
-                                            onclick() {
-                                                update(i === state.turn ? { type: "bank" } : { type: "steal", player: i });
-                                                // do a thing idk
-                                            },
-                                        },
-                                        [i === state.turn ? "Bank" : "Steal"],
-                                    ),
-                                ]),
                             ],
                         ),
                     ]),

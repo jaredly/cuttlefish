@@ -4,7 +4,7 @@ export type Player = {
     score: Card[];
 };
 
-export type Action = { type: 'steal'; player: number } | { type: 'bank' };
+export type Action = { type: "steal"; player: number } | { type: "bank" };
 export type Suit = { index: number; color: string; picture?: string; text?: string };
 
 export type Config = {
