@@ -1,6 +1,7 @@
-import { div, node, render, button } from "./framework";
+import { div, node, render, button, span } from "./framework";
 import { loadBlob } from "./newGameForm";
 import type { Suit, Card, State, Action, Player, Config } from "./types";
+import dirt from "../dirt.png";
 
 export const points = (num: number, maxPoints: number) => {
     const cards = [];
@@ -36,6 +37,83 @@ export const cardWidth = 100;
 export const cardHeight = cardWidth * 1.8;
 const isPlayerDone = (state: State, player: Player) =>
     player.score.length >= state.config.maxPoints;
+const hasFinishRank = (state: State, playerIndex: number) =>
+    state.finishOrder.includes(playerIndex);
+const recordFinishedPlayers = (state: State) => {
+    state.players.forEach((player, index) => {
+        if (isPlayerDone(state, player) && !hasFinishRank(state, index)) {
+            state.finishOrder.push(index);
+        }
+    });
+
+    if (state.players.length <= 1) {
+        return;
+    }
+
+    const unfinishedPlayers = state.players
+        .map((player, index) => ({ player, index }))
+        .filter(({ player }) => !isPlayerDone(state, player));
+    if (unfinishedPlayers.length === 1) {
+        const lastPlayer = unfinishedPlayers[0]!;
+        if (!hasFinishRank(state, lastPlayer.index)) {
+            state.finishOrder.push(lastPlayer.index);
+        }
+    }
+};
+type Prize =
+    | { kind: "emoji"; label: string; value: string }
+    | { kind: "image"; label: string; src: string }
+    | null;
+const playerPrize = (state: State, playerIndex: number): Prize => {
+    const place = state.finishOrder.indexOf(playerIndex);
+    if (place === -1) {
+        return null;
+    }
+
+    if (state.players.length === 1) {
+        return place === 0
+            ? { kind: "emoji", label: "First place", value: "💎" }
+            : null;
+    }
+
+    if (
+        state.finishOrder.length === state.players.length &&
+        place === state.players.length - 1
+    ) {
+        return { kind: "image", label: "Last place", src: dirt };
+    }
+
+    return (
+        (
+            [
+                { kind: "emoji", label: "First place", value: "💎" },
+                { kind: "emoji", label: "Second place", value: "🥇" },
+                { kind: "emoji", label: "Third place", value: "🥈" },
+                { kind: "emoji", label: "Fourth place", value: "🥉" },
+            ] as const
+        )[place] ?? null
+    );
+};
+const renderPrize = (prize: Prize) => {
+    if (!prize) {
+        return null;
+    }
+
+    if (prize.kind === "image") {
+        return node("img", {
+            src: prize.src,
+            title: prize.label,
+            alt: prize.label,
+            style: {
+                width: "1.2em",
+                height: "1.2em",
+                objectFit: "contain",
+            },
+        });
+    }
+
+    return span({ title: prize.label }, [prize.value]);
+};
 const nextActiveTurn = (state: State, currentTurn: number) => {
     const unfinishedPlayers = state.players.filter(
         (player) => !isPlayerDone(state, player),
@@ -455,6 +533,7 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
 
                             const player = state.players[slot]!;
                             const i = slot;
+                            const prize = playerPrize(state, i);
                             const isActive =
                                 hasActivePlayer &&
                                 i === state.turn &&
@@ -509,6 +588,7 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                                                     },
                                                     [
                                                         player.name,
+                                                        renderPrize(prize),
                                                         div(
                                                             {
                                                                 style: {
@@ -705,6 +785,7 @@ export const newGame = (config: Config, players: string[]): State => {
             players.length * (config.startingTankSize + 11),
         ),
         turn: 0,
+        finishOrder: [],
     };
 
     players.forEach((name) => addPlayer(name, state));
@@ -744,6 +825,7 @@ export const update = async (state: State, action: Action) => {
             break;
         }
     }
+    recordFinishedPlayers(state);
     const nextTurn = nextActiveTurn(state, state.turn);
     if (nextTurn !== null) {
         state.turn = nextTurn;

@@ -20,6 +20,7 @@ export type State = {
     turn: number;
     players: Player[];
     deck: Card[];
+    finishOrder: number[];
 };
 
 export type Card = {
