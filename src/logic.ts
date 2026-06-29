@@ -1,6 +1,7 @@
-import { div, node, render, button } from "./framework";
+import { div, node, render, button, span } from "./framework";
 import { loadBlob } from "./newGameForm";
 import type { Suit, Card, State, Action, Player, Config } from "./types";
+import dirt from "../dirt.png";
 
 export const points = (num: number, maxPoints: number) => {
     const cards = [];
@@ -34,8 +35,113 @@ export const points = (num: number, maxPoints: number) => {
 
 export const cardWidth = 100;
 export const cardHeight = cardWidth * 1.8;
-const combinate = (left: number, suits: number, path: number[], dest: number[][]) => {
-    for (let i = path.length > 1 ? path[path.length - 1]! + 1 : 0; i < suits; i++) {
+const isPlayerDone = (state: State, player: Player) =>
+    player.score.length >= state.config.maxPoints;
+const hasFinishRank = (state: State, playerIndex: number) =>
+    state.finishOrder.includes(playerIndex);
+const recordFinishedPlayers = (state: State) => {
+    state.players.forEach((player, index) => {
+        if (isPlayerDone(state, player) && !hasFinishRank(state, index)) {
+            state.finishOrder.push(index);
+        }
+    });
+
+    if (state.players.length <= 1) {
+        return;
+    }
+
+    const unfinishedPlayers = state.players
+        .map((player, index) => ({ player, index }))
+        .filter(({ player }) => !isPlayerDone(state, player));
+    if (unfinishedPlayers.length === 1) {
+        const lastPlayer = unfinishedPlayers[0]!;
+        if (!hasFinishRank(state, lastPlayer.index)) {
+            state.finishOrder.push(lastPlayer.index);
+        }
+    }
+};
+type Prize =
+    | { kind: "emoji"; label: string; value: string }
+    | { kind: "image"; label: string; src: string }
+    | null;
+const playerPrize = (state: State, playerIndex: number): Prize => {
+    const place = state.finishOrder.indexOf(playerIndex);
+    if (place === -1) {
+        return null;
+    }
+
+    if (state.players.length === 1) {
+        return place === 0
+            ? { kind: "emoji", label: "First place", value: "💎" }
+            : null;
+    }
+
+    if (
+        state.finishOrder.length === state.players.length &&
+        place === state.players.length - 1
+    ) {
+        return { kind: "image", label: "Last place", src: dirt };
+    }
+
+    return (
+        (
+            [
+                { kind: "emoji", label: "First place", value: "💎" },
+                { kind: "emoji", label: "Second place", value: "🥇" },
+                { kind: "emoji", label: "Third place", value: "🥈" },
+                { kind: "emoji", label: "Fourth place", value: "🥉" },
+            ] as const
+        )[place] ?? null
+    );
+};
+const renderPrize = (prize: Prize) => {
+    if (!prize) {
+        return null;
+    }
+
+    if (prize.kind === "image") {
+        return node("img", {
+            src: prize.src,
+            title: prize.label,
+            alt: prize.label,
+            style: {
+                width: "1.2em",
+                height: "1.2em",
+                objectFit: "contain",
+            },
+        });
+    }
+
+    return span({ title: prize.label }, [prize.value]);
+};
+const nextActiveTurn = (state: State, currentTurn: number) => {
+    const unfinishedPlayers = state.players.filter(
+        (player) => !isPlayerDone(state, player),
+    );
+    if (!unfinishedPlayers.length) {
+        return null;
+    }
+
+    let turn = currentTurn;
+    do {
+        turn += 1;
+        turn %= state.players.length;
+    } while (isPlayerDone(state, state.players[turn]!));
+
+    return turn;
+};
+
+const combinate = (
+    left: number,
+    suits: number,
+    path: number[],
+    dest: number[][],
+) => {
+    for (
+        let i = path.length > 1 ? path[path.length - 1]! + 1 : 0;
+        i < suits;
+        i++
+    ) {
         if (path.includes(i)) continue;
         if (left === 1) {
             dest.push(path.concat([i]));
@@ -51,7 +157,13 @@ const randsort = <T>(a: T[]): T[] => {
         .map((a) => a[0]);
 };
 
-export const renderCardStack = (player: number, suit: Suit, stack: number, highlight: boolean | null, scale = 1) => {
+export const renderCardStack = (
+    player: number,
+    suit: Suit,
+    stack: number,
+    highlight: boolean | null,
+    scale = 1,
+) => {
     const shared = {
         // border: `5px solid ${colors[suit]}`,
         // border: `5px solid black`,
@@ -76,7 +188,8 @@ export const renderCardStack = (player: number, suit: Suit, stack: number, highl
                     // transition: '.3s ease margin-inline border width',
                     transitionDuration: ".3s",
                     transitionTimingFunction: "ease",
-                    transitionProperty: "margin-inline, border-width, width, padding",
+                    transitionProperty:
+                        "margin-inline, border-width, width, padding",
                 },
                 id: `tank-${player}-${suit.index}`,
                 class: `bg-base-100 shadow-sm rounded-lg`,
@@ -156,8 +269,12 @@ export const renderCardStack = (player: number, suit: Suit, stack: number, highl
                               href: loadBlob(suit.picture),
                               width: (cardWidth / 3) * 2 * scale + "px",
                               height: (cardWidth / 3) * 2 * scale + "px",
-                              x: (cardWidth / 2) * scale - (cardWidth / 3) * scale,
-                              y: (cardHeight / 2) * scale - (cardWidth / 3) * scale,
+                              x:
+                                  (cardWidth / 2) * scale -
+                                  (cardWidth / 3) * scale,
+                              y:
+                                  (cardHeight / 2) * scale -
+                                  (cardWidth / 3) * scale,
                           })
                         : suit.text
                           ? node(
@@ -249,7 +366,9 @@ const renderCardBack = (card: Card) => {
                             node("clipPath", { id: "circle" + i }, [
                                 node("ellipse", {
                                     cx: cardWidth,
-                                    cy: ((cardHeight * 2) / card.back.length) * (i + 0.5),
+                                    cy:
+                                        ((cardHeight * 2) / card.back.length) *
+                                        (i + 0.5),
                                     rx: cardWidth / 3,
                                     ry: cardWidth / 3,
                                 }),
@@ -260,36 +379,61 @@ const renderCardBack = (card: Card) => {
                         suit.index === card.suit.index
                             ? null
                             : node("path", {
-                                  class: i < selfAt ? "suit-before" : "suit-after",
+                                  class:
+                                      i < selfAt ? "suit-before" : "suit-after",
                                   fill: suit.color,
                                   d: `M0 ${pairs[i]![0]} L${cardWidth * 2} ${pairs[i]![1]}
                         L${cardWidth * 2} ${pairs[i + 1]![1]} L0 ${pairs[i + 1]![0]} Z`,
                               }),
                         node("ellipse", {
                             cx: cardWidth,
-                            class: i === selfAt ? "" : i < selfAt ? "suit-before" : "suit-after",
-                            cy: ((cardHeight * 2) / card.back.length) * (i + 0.5),
+                            class:
+                                i === selfAt
+                                    ? ""
+                                    : i < selfAt
+                                      ? "suit-before"
+                                      : "suit-after",
+                            cy:
+                                ((cardHeight * 2) / card.back.length) *
+                                (i + 0.5),
                             rx: cardWidth / 3,
                             ry: cardWidth / 3,
                             fill: "white",
                         }),
                         suit.picture
                             ? node("image", {
-                                  class: i === selfAt ? "" : i < selfAt ? "suit-before" : "suit-after",
+                                  class:
+                                      i === selfAt
+                                          ? ""
+                                          : i < selfAt
+                                            ? "suit-before"
+                                            : "suit-after",
                                   "clip-path": `url(#circle${i})`,
                                   href: loadBlob(suit.picture),
                                   width: (cardWidth / 3) * 2 + "px",
                                   height: (cardWidth / 3) * 2 + "px",
                                   x: cardWidth - cardWidth / 3,
-                                  y: ((cardHeight * 2) / card.back.length) * (i + 0.5) - cardWidth / 3,
+                                  y:
+                                      ((cardHeight * 2) / card.back.length) *
+                                          (i + 0.5) -
+                                      cardWidth / 3,
                               })
                             : suit.text
                               ? node(
                                     "text",
                                     {
-                                        class: i === selfAt ? "" : i < selfAt ? "suit-before" : "suit-after",
+                                        class:
+                                            i === selfAt
+                                                ? ""
+                                                : i < selfAt
+                                                  ? "suit-before"
+                                                  : "suit-after",
                                         x: cardWidth,
-                                        y: ((cardHeight * 2) / card.back.length) * (i + 0.5) + cardWidth / 5,
+                                        y:
+                                            ((cardHeight * 2) /
+                                                card.back.length) *
+                                                (i + 0.5) +
+                                            cardWidth / 5,
                                         "text-anchor": "middle",
                                         "font-size": cardWidth / 2 + "px",
                                     },
@@ -302,143 +446,284 @@ const renderCardBack = (card: Card) => {
         ],
     );
 };
+
+const clockwiseTwoColumnSlots = (playerCount: number): (number | null)[] => {
+    const rows = Math.ceil(playerCount / 2);
+    const rightColumnCount = Math.floor(playerCount / 2);
+    const slots: (number | null)[] = [];
+
+    for (let row = 0; row < rows; row++) {
+        slots.push(row === 0 ? 0 : playerCount - row);
+        slots.push(row < rightColumnCount ? row + 1 : null);
+    }
+
+    console.log("two column slots", playerCount, slots);
+
+    return slots;
+};
+
 export const renderGame = (state: State, update: (action: Action) => void) => {
-    // let columns = 1;
     const rows = state.players.length;
+    const hasActivePlayer = state.players.some(
+        (player) => !isPlayerDone(state, player),
+    );
     const basePlayerSize = { height: 256, width: 950 };
     const availableHeight = window.innerHeight - 40;
-    const availableWidth = window.innerWidth - 300; // the draw pile
-    let playerScale = Math.min(availableHeight / rows / basePlayerSize.height, availableWidth / basePlayerSize.width);
+    const availableWidth = window.innerWidth - 274; // the draw pile
+    let playerScale = Math.min(
+        availableHeight / rows / basePlayerSize.height,
+        availableWidth / basePlayerSize.width,
+    );
+    let columns = 1;
     if (basePlayerSize.width * playerScale < availableWidth / 2) {
-        // columns = 2;
+        columns = 2;
         playerScale = availableWidth / 2 / basePlayerSize.width;
-        console.log("rescale", availableWidth / 2, basePlayerSize.width, playerScale);
     }
+    const playerSlots =
+        columns === 2
+            ? clockwiseTwoColumnSlots(state.players.length)
+            : state.players.map((_, i) => i);
+    console.log(
+        "SLOTS",
+        columns,
+        basePlayerSize.width,
+        playerScale,
+        availableWidth / 2,
+    );
 
     render(
         document.body,
-        div({ style: { display: "flex", flexDirection: "row", alignItems: "center", height: "100vh", padding: "16px" } }, [
-            div(
-                {
-                    style: {
-                        flex: 1,
-                        flexWrap: "wrap",
-                        display: "flex",
-
-                        // display: "grid",
-                        // gridTemplateColumns: "1fr max-content",
-                        alignItems: "flex-start",
-                        justifyContent: "flex-start",
-                    },
+        div(
+            {
+                style: {
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    height: "100vh",
+                    padding: "16px",
                 },
-                [
-                    state.players.map((player, i) => [
-                        div(
-                            {
-                                style: {
-                                    width: "950px",
-                                    height: "256px",
-                                    zoom: playerScale,
-                                    display: "flex",
-                                },
-                            },
-                            [
+            },
+            [
+                div(
+                    {
+                        style: {
+                            flex: 1,
+                            flexWrap: "wrap",
+                            display: "flex",
+
+                            // display: "grid",
+                            // gridTemplateColumns: "1fr max-content",
+                            alignItems: "flex-start",
+                            justifyContent: "flex-start",
+                        },
+                    },
+                    [
+                        playerSlots.map((slot) => {
+                            if (slot === null) {
+                                return div({
+                                    style: {
+                                        width: "950px",
+                                        height: "256px",
+                                        zoom: playerScale,
+                                        display: "flex",
+                                        visibility: "hidden",
+                                    },
+                                });
+                            }
+
+                            const player = state.players[slot]!;
+                            const i = slot;
+                            const prize = playerPrize(state, i);
+                            const isActive =
+                                hasActivePlayer &&
+                                i === state.turn &&
+                                !isPlayerDone(state, player);
+                            return [
                                 div(
                                     {
                                         style: {
-                                            ...(i === state.turn
-                                                ? {
-                                                      outline: "5px dotted magenta",
-                                                      borderRadius: "10px",
-                                                  }
-                                                : {}),
+                                            width: "950px",
+                                            height: "256px",
+                                            zoom: playerScale,
+                                            display: "flex",
                                         },
                                     },
                                     [
                                         div(
                                             {
                                                 style: {
-                                                    display: "flex",
-                                                    flexDirection: "row",
-                                                    padding: "8px 16px",
-                                                    fontSize: "1.5em",
-                                                    fontWeight: "bold",
-                                                    alignItems: "center",
-                                                    gap: "8px",
-                                                    ...(i === state.turn
+                                                    ...(isActive
                                                         ? {
-                                                              borderRadius: "10px",
-                                                              backgroundColor: "magenta",
-                                                              color: "white",
+                                                              outline:
+                                                                  "5px dotted magenta",
+                                                              borderRadius:
+                                                                  "10px",
                                                           }
-                                                        : null),
+                                                        : {}),
                                                 },
                                             },
                                             [
-                                                player.name,
-                                                div({ style: { alignSelf: "anchor-center" } }, [
-                                                    button(
-                                                        {
-                                                            class: "btn btn-l btn-" + (i === state.turn ? "primary" : "secondary"),
-                                                            style: {
-                                                                marginLeft: "24px",
-                                                                borderRadius: "4px",
-                                                            },
-                                                            onclick(evt: MouseEvent) {
-                                                                evt.stopPropagation();
-                                                                update(i === state.turn ? { type: "bank" } : { type: "steal", player: i });
-                                                                // do a thing idk
-                                                            },
+                                                div(
+                                                    {
+                                                        style: {
+                                                            display: "flex",
+                                                            flexDirection:
+                                                                "row",
+                                                            padding: "8px 16px",
+                                                            fontSize: "1.5em",
+                                                            fontWeight: "bold",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: "8px",
+                                                            ...(isActive
+                                                                ? {
+                                                                      borderRadius:
+                                                                          "10px",
+                                                                      backgroundColor:
+                                                                          "magenta",
+                                                                      color: "white",
+                                                                  }
+                                                                : null),
                                                         },
-                                                        [i === state.turn ? "Bank" : "Steal"],
-                                                    ),
-                                                ]),
+                                                    },
+                                                    [
+                                                        player.name,
+                                                        renderPrize(prize),
+                                                        div(
+                                                            {
+                                                                style: {
+                                                                    alignSelf:
+                                                                        "anchor-center",
+                                                                },
+                                                            },
+                                                            [
+                                                                button(
+                                                                    {
+                                                                        class:
+                                                                            "btn btn-l btn-" +
+                                                                            (isActive
+                                                                                ? "primary"
+                                                                                : "secondary"),
+                                                                        style: {
+                                                                            marginLeft:
+                                                                                "24px",
+                                                                            borderRadius:
+                                                                                "4px",
+                                                                        },
+                                                                        ...(hasActivePlayer
+                                                                            ? {}
+                                                                            : {
+                                                                                  disabled:
+                                                                                      "disabled",
+                                                                              }),
+                                                                        onclick(
+                                                                            evt: MouseEvent,
+                                                                        ) {
+                                                                            evt.stopPropagation();
+                                                                            if (
+                                                                                !hasActivePlayer
+                                                                            )
+                                                                                return;
+                                                                            update(
+                                                                                isActive
+                                                                                    ? {
+                                                                                          type: "bank",
+                                                                                      }
+                                                                                    : {
+                                                                                          type: "steal",
+                                                                                          player: i,
+                                                                                      },
+                                                                            );
+                                                                            // do a thing idk
+                                                                        },
+                                                                    },
+                                                                    [
+                                                                        isActive
+                                                                            ? "Bank"
+                                                                            : "Steal",
+                                                                    ],
+                                                                ),
+                                                            ],
+                                                        ),
 
-                                                div({ style: { flex: 1 } }, []),
-                                                points(player.score.length, state.config.maxPoints),
-                                            ],
-                                        ),
-                                        div(
-                                            {
-                                                style: {
-                                                    display: "flex",
-                                                    flexDirection: "row",
-                                                    height: cardHeight + "px",
-                                                    width: cardWidth * state.config.suits.length + 16 * state.config.suits.length + "px",
-                                                },
-                                            },
-                                            [
-                                                ...player.tank.map((cards, suit) =>
-                                                    renderCardStack(
-                                                        i,
-                                                        state.config.suits[suit]!,
-                                                        // cards[0]?.suit,
-                                                        cards.length,
-                                                        state.deck[0]!.back.some((b) => b.index === suit),
-                                                    ),
+                                                        div(
+                                                            {
+                                                                style: {
+                                                                    flex: 1,
+                                                                },
+                                                            },
+                                                            [],
+                                                        ),
+                                                        points(
+                                                            player.score.length,
+                                                            state.config
+                                                                .maxPoints,
+                                                        ),
+                                                    ],
+                                                ),
+                                                div(
+                                                    {
+                                                        style: {
+                                                            display: "flex",
+                                                            flexDirection:
+                                                                "row",
+                                                            height:
+                                                                cardHeight +
+                                                                "px",
+                                                            width:
+                                                                cardWidth *
+                                                                    state.config
+                                                                        .suits
+                                                                        .length +
+                                                                16 *
+                                                                    state.config
+                                                                        .suits
+                                                                        .length +
+                                                                "px",
+                                                        },
+                                                    },
+                                                    [
+                                                        ...player.tank.map(
+                                                            (cards, suit) =>
+                                                                renderCardStack(
+                                                                    i,
+                                                                    state.config
+                                                                        .suits[
+                                                                        suit
+                                                                    ]!,
+                                                                    // cards[0]?.suit,
+                                                                    cards.length,
+                                                                    state.deck[0]!.back.some(
+                                                                        (b) =>
+                                                                            b.index ===
+                                                                            suit,
+                                                                    ),
+                                                                ),
+                                                        ),
+                                                    ],
                                                 ),
                                             ],
                                         ),
                                     ],
                                 ),
-                            ],
-                        ),
-                    ]),
-                ],
-            ),
-            div(
-                {
-                    style: {
-                        alignSelf: "center",
-                        // flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
+                            ];
+                        }),
+                    ],
+                ),
+                div(
+                    {
+                        style: {
+                            alignSelf: "center",
+                            // flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                        },
                     },
-                },
-                [renderCardBack(state.deck[0]!)],
-            ),
-        ]),
+                    [renderCardBack(state.deck[0]!)],
+                ),
+            ],
+        ),
     );
 };
 const addPlayer = (name: string, state: State) => {
@@ -451,7 +736,10 @@ const addPlayer = (name: string, state: State) => {
         player.tank.push([]);
     }
     for (let i = 0; i < state.config.startingTankSize; i++) {
-        const [got] = state.deck.splice((Math.random() * state.deck.length) | 0, 1);
+        const [got] = state.deck.splice(
+            (Math.random() * state.deck.length) | 0,
+            1,
+        );
         player.tank[got!.suit.index]!.push(got!);
     }
     return true;
@@ -469,7 +757,12 @@ const makeCards = (suits: Suit[], rainbow: number, minCount: number) => {
             back.splice(at, 0, suit);
         });
         backs.forEach((back, i) => {
-            cards.push({ back: back.map((i) => suits[i]!), suit: suits[suit]!, idx: cards.length, rot: Math.random() });
+            cards.push({
+                back: back.map((i) => suits[i]!),
+                suit: suits[suit]!,
+                idx: cards.length,
+                rot: Math.random(),
+            });
         });
     }
     if (cards.length < minCount) {
@@ -486,8 +779,13 @@ export const newGame = (config: Config, players: string[]): State => {
     const state: State = {
         config,
         players: [],
-        deck: makeCards(config.suits, config.backSuitCount, players.length * (config.startingTankSize + 11)),
+        deck: makeCards(
+            config.suits,
+            config.backSuitCount,
+            players.length * (config.startingTankSize + 11),
+        ),
         turn: 0,
+        finishOrder: [],
     };
 
     players.forEach((name) => addPlayer(name, state));
@@ -515,7 +813,10 @@ export const update = async (state: State, action: Action) => {
             const other = state.players[action.player]!;
             if (other.tank[card.suit.index]!.length) {
                 await highlightTank(action.player, card.suit.index);
-                player.tank[card.suit.index]!.push(card, ...other.tank[card.suit.index]!);
+                player.tank[card.suit.index]!.push(
+                    card,
+                    ...other.tank[card.suit.index]!,
+                );
                 other.tank[card.suit.index] = [];
             } else {
                 await expandTank(action.player, card.suit.index);
@@ -524,8 +825,11 @@ export const update = async (state: State, action: Action) => {
             break;
         }
     }
-    state.turn += 1;
-    state.turn %= state.players.length;
+    recordFinishedPlayers(state);
+    const nextTurn = nextActiveTurn(state, state.turn);
+    if (nextTurn !== null) {
+        state.turn = nextTurn;
+    }
 };
 
 const wait = (n: number) => new Promise((res) => setTimeout(res, n));

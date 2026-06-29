@@ -1,0 +1,1 @@
+When a player has 'won' (gotten 10+ cards in their bank), play can still continue (as it currently does), but that player should be skipped in turns. other players can still attempt to steal from them though.
