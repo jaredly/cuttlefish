@@ -1,4 +1,8 @@
 
+# Better sizing
+
+- [x] do some manual calculating & scaling ( zoom)
+
 # Ok the plan
 
 ## Phase 1

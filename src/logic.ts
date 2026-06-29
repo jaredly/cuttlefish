@@ -34,6 +34,22 @@ export const points = (num: number, maxPoints: number) => {
 
 export const cardWidth = 100;
 export const cardHeight = cardWidth * 1.8;
+const isPlayerDone = (state: State, player: Player) => player.score.length >= state.config.maxPoints;
+const nextActiveTurn = (state: State, currentTurn: number) => {
+    const unfinishedPlayers = state.players.filter((player) => !isPlayerDone(state, player));
+    if (!unfinishedPlayers.length) {
+        return null;
+    }
+
+    let turn = currentTurn;
+    do {
+        turn += 1;
+        turn %= state.players.length;
+    } while (isPlayerDone(state, state.players[turn]!));
+
+    return turn;
+};
+
 const combinate = (left: number, suits: number, path: number[], dest: number[][]) => {
     for (let i = path.length > 1 ? path[path.length - 1]! + 1 : 0; i < suits; i++) {
         if (path.includes(i)) continue;
@@ -305,6 +321,7 @@ const renderCardBack = (card: Card) => {
 export const renderGame = (state: State, update: (action: Action) => void) => {
     // let columns = 1;
     const rows = state.players.length;
+    const hasActivePlayer = state.players.some((player) => !isPlayerDone(state, player));
     const basePlayerSize = { height: 256, width: 950 };
     const availableHeight = window.innerHeight - 40;
     const availableWidth = window.innerWidth - 300; // the draw pile
@@ -332,98 +349,103 @@ export const renderGame = (state: State, update: (action: Action) => void) => {
                     },
                 },
                 [
-                    state.players.map((player, i) => [
-                        div(
-                            {
-                                style: {
-                                    width: "950px",
-                                    height: "256px",
-                                    zoom: playerScale,
-                                    display: "flex",
-                                },
-                            },
-                            [
-                                div(
-                                    {
-                                        style: {
-                                            ...(i === state.turn
-                                                ? {
-                                                      outline: "5px dotted magenta",
-                                                      borderRadius: "10px",
-                                                  }
-                                                : {}),
-                                        },
+                    state.players.map((player, i) => {
+                        const isActive = hasActivePlayer && i === state.turn && !isPlayerDone(state, player);
+                        return [
+                            div(
+                                {
+                                    style: {
+                                        width: "950px",
+                                        height: "256px",
+                                        zoom: playerScale,
+                                        display: "flex",
                                     },
-                                    [
-                                        div(
-                                            {
-                                                style: {
-                                                    display: "flex",
-                                                    flexDirection: "row",
-                                                    padding: "8px 16px",
-                                                    fontSize: "1.5em",
-                                                    fontWeight: "bold",
-                                                    alignItems: "center",
-                                                    gap: "8px",
-                                                    ...(i === state.turn
-                                                        ? {
-                                                              borderRadius: "10px",
-                                                              backgroundColor: "magenta",
-                                                              color: "white",
-                                                          }
-                                                        : null),
-                                                },
+                                },
+                                [
+                                    div(
+                                        {
+                                            style: {
+                                                ...(isActive
+                                                    ? {
+                                                          outline: "5px dotted magenta",
+                                                          borderRadius: "10px",
+                                                      }
+                                                    : {}),
                                             },
-                                            [
-                                                player.name,
-                                                div({ style: { alignSelf: "anchor-center" } }, [
-                                                    button(
-                                                        {
-                                                            class: "btn btn-l btn-" + (i === state.turn ? "primary" : "secondary"),
-                                                            style: {
-                                                                marginLeft: "24px",
-                                                                borderRadius: "4px",
+                                        },
+                                        [
+                                            div(
+                                                {
+                                                    style: {
+                                                        display: "flex",
+                                                        flexDirection: "row",
+                                                        padding: "8px 16px",
+                                                        fontSize: "1.5em",
+                                                        fontWeight: "bold",
+                                                        alignItems: "center",
+                                                        gap: "8px",
+                                                        ...(isActive
+                                                            ? {
+                                                                  borderRadius: "10px",
+                                                                  backgroundColor: "magenta",
+                                                                  color: "white",
+                                                              }
+                                                            : null),
+                                                    },
+                                                },
+                                                [
+                                                    player.name,
+                                                    div({ style: { alignSelf: "anchor-center" } }, [
+                                                        button(
+                                                            {
+                                                                class: "btn btn-l btn-" + (isActive ? "primary" : "secondary"),
+                                                                style: {
+                                                                    marginLeft: "24px",
+                                                                    borderRadius: "4px",
+                                                                },
+                                                                ...(hasActivePlayer ? {} : { disabled: "disabled" }),
+                                                                onclick(evt: MouseEvent) {
+                                                                    evt.stopPropagation();
+                                                                    if (!hasActivePlayer) return;
+                                                                    update(isActive ? { type: "bank" } : { type: "steal", player: i });
+                                                                    // do a thing idk
+                                                                },
                                                             },
-                                                            onclick(evt: MouseEvent) {
-                                                                evt.stopPropagation();
-                                                                update(i === state.turn ? { type: "bank" } : { type: "steal", player: i });
-                                                                // do a thing idk
-                                                            },
-                                                        },
-                                                        [i === state.turn ? "Bank" : "Steal"],
-                                                    ),
-                                                ]),
+                                                            [isActive ? "Bank" : "Steal"],
+                                                        ),
+                                                    ]),
 
-                                                div({ style: { flex: 1 } }, []),
-                                                points(player.score.length, state.config.maxPoints),
-                                            ],
-                                        ),
-                                        div(
-                                            {
-                                                style: {
-                                                    display: "flex",
-                                                    flexDirection: "row",
-                                                    height: cardHeight + "px",
-                                                    width: cardWidth * state.config.suits.length + 16 * state.config.suits.length + "px",
+                                                    div({ style: { flex: 1 } }, []),
+                                                    points(player.score.length, state.config.maxPoints),
+                                                ],
+                                            ),
+                                            div(
+                                                {
+                                                    style: {
+                                                        display: "flex",
+                                                        flexDirection: "row",
+                                                        height: cardHeight + "px",
+                                                        width: cardWidth * state.config.suits.length + 16 * state.config.suits.length + "px",
+                                                    },
                                                 },
-                                            },
-                                            [
-                                                ...player.tank.map((cards, suit) =>
-                                                    renderCardStack(
-                                                        i,
-                                                        state.config.suits[suit]!,
-                                                        // cards[0]?.suit,
-                                                        cards.length,
-                                                        state.deck[0]!.back.some((b) => b.index === suit),
+                                                [
+                                                    ...player.tank.map((cards, suit) =>
+                                                        renderCardStack(
+                                                            i,
+                                                            state.config.suits[suit]!,
+                                                            // cards[0]?.suit,
+                                                            cards.length,
+                                                            state.deck[0]!.back.some((b) => b.index === suit),
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
-                                        ),
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ]),
+                                                ],
+                                            ),
+                                        ],
+                                    ),
+                                ],
+                            ),
+                        ];
+                    }),
                 ],
             ),
             div(
@@ -524,8 +546,10 @@ export const update = async (state: State, action: Action) => {
             break;
         }
     }
-    state.turn += 1;
-    state.turn %= state.players.length;
+    const nextTurn = nextActiveTurn(state, state.turn);
+    if (nextTurn !== null) {
+        state.turn = nextTurn;
+    }
 };
 
 const wait = (n: number) => new Promise((res) => setTimeout(res, n));
